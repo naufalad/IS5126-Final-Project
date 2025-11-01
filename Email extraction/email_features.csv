@@ -1,0 +1,301 @@
+email_text,scheduled_datetime,date_text,date_from,date_to,time_from,time_to,has_complete_datetime,location,meeting_url,maps_url,coordinates,location_type,event_type,event_confidence,urgency_level,urgency_score,urgency_indicators,recurrence_pattern,recurrence_text,action_required,action_deadline,action_confidence,action_phrases,contains_links,contains_attachments,financial_amount
+"Subject: Anniversary Special: Buy one get one free
+
+Body: As our loyal customer, get exclusive $60 off $75+: example.com/6058 Offer code: WELCOME20.",,,,,,,False,,,,,,,,,,[],,,,,,[],False,False,
+"Subject: Digital Ritual Experience Creation
+
+Body: Cross-cultural ceremony design. Join: virtualrituals.space Anthropological framework.",,,,,,,False,,https://virtualrituals.space,,,virtual,other,0.5,low,0.0,[],none,,click,,0.5,['Join'],True,False,
+"Subject: Your post was moved to ""Programming Help""
+
+Body: Trending: ""cooking"" (258 comments). View: support.site/ticket/456.",,,,,,,False,,,,,none,notification,0.5,low,0.0,[],none,,none,,0.0,[],True,False,
+"Subject: Memories from this week in 2021
+
+Body: 45 friends checked in at ""Downtown Cafe"". See photos and menu: social.com/places/cafe.",,this week in 2021,,,,,False,Downtown Cafe,,social.com/places/cafe,,physical,other,0.5,low,0.0,[],none,,none,,0.0,[],True,False,
+"Subject: Two-step verification code: 426706
+
+Body: For account verification, enter: 924578. Do not share this number.",,,,,,,False,,,,,none,verification,0.9,low,0.1,[],none,,verify,,0.8,"['enter', 'verify']",False,False,
+"Subject: Secure access number: 892974
+
+Body: Enter 426706 to verify password reset. Session will auto-cancel after 2 invalid attempts.",,,,,,,False,,,,,none,verification,0.8,medium,0.5,[],none,,verify,,0.9,['verify password reset'],False,False,
+"Subject: Moderation notice: Community Guidelines update
+
+Body: Thread ""Discussion 719"" moved from General to Support. Continue: support.site/ticket/456.",,,,,,,False,,support.site/ticket/456,,,virtual,notification,0.8,low,0.1,[],none,,click,,0.7,['Continue'],True,False,
+"Subject: News: Mike Chen started new position
+
+Body: Group update: ""Hiking Buddies"" posted article. Trending in ""Startup Founders"": best summer destination.",,,,,,,False,,,,,none,notification,0.5,low,0.0,[],none,,none,,0.0,[],False,False,
+"Subject: Your post was moved to ""Technical Support""
+
+Body: Thread: ""Discussion 593"" started by PixelArtist. Settings: support.site/ticket/456.",,,,,,,False,,,,,none,notification,0.5,low,0.0,[],none,,none,,0.0,[],True,False,
+"Subject: Nearby: Meetup today 8PM
+
+Body: View profile: social.com/profile/john123 Accept/reject: social.com/friends/pending.",2023-10-10 20:00:00,today 8PM,2023-10-10,2023-10-10,20:00:00,20:00:00,True,,,,,none,meeting,0.9,medium,0.5,['today'],none,,click,,0.8,['Accept/reject'],True,False,
+"Subject: User Spotlight: Member Spotlight
+
+Body: {event} starts {time}. Prepare: support.site/ticket/456.",,,,,,,False,,,,,none,other,0.5,low,0.0,[],none,,click,,0.5,['Prepare'],True,False,
+"Subject: Apple verification: 713300
+
+Body: Code: 880677 for login confirmation. Do not share. Requested from IP 198.51.100.1 at 14:30 GMT.",,14:30 GMT,,,14:30:00,14:30:00,False,,,,,none,verification,0.9,low,0.1,[],none,,verify,,0.8,['login confirmation'],False,False,
+"Subject: Free dessert With any order
+
+Body: Deal ends {time}! {items} at lowest prices. Shop now: example.com/7932 Use code: VIP25.",,,,,,,False,,,,,none,notification,0.7,medium,0.5,[],none,,click,,0.8,['Shop now'],True,False,
+"Subject: Event reminder: Meetup
+
+Body: User: TechGuru99 post. support.site/ticket/456.",,,,,,,False,,,,,none,reminder,0.8,low,0.1,[],none,,none,,0.0,[],True,False,
+"Subject: Forum Contest: Photo Contest
+
+Body: Thread ""Discussion 551"" moved from General to Support. Continue: support.site/ticket/456.",,,,,,,False,,,,,none,notification,0.7,low,0.1,[],none,,none,,0.0,[],True,False,
+"Subject: Last chance: Warehouse clearance
+
+Body: Final hours of biggest sale. Up to 80% off: example.com/3917 Ends {time}.",,,,,,,False,,,,,none,final,0.8,high,0.9,"['Final hours', 'last chance']",none,,click,,0.7,['Ends'],True,False,up to 80% off
+"Subject: New reply in ""Home Server Setup""
+
+Body: You earned ""Achievement 3"" badge. View profile: wiki.site/page/789.",,,,,,,False,,,,,none,notification,0.8,low,0.0,[],none,,none,,0.0,[],True,False,
+"Subject: Policy update: Terms of Service changes
+
+Body: Restaurant Main pool closed Aug 20-22 for maintenance, Sep 1, 2-4AM PST. {assignment} confirmed. Manage booking: company.com/updates.",,"Aug 20-22 for maintenance, Sep 1, 2-4AM PST",2023-08-20,2023-08-22,02:00:00,04:00:00,True,,,,,none,maintenance,0.9,low,0.2,[],none,,none,,0.0,[],True,False,
+"Subject: Microsoft withdrawal auth: 383921
+
+Body: Token: 202896 expires at 09:45 EST. For support, contact security@company.com.",,expires at 09:45 EST,,,14:45:00,14:45:00,False,,,,,none,notification,0.8,medium,0.5,[],none,,none,,0.0,[],False,False,
+"Subject: GitHub verification: 995304
+
+Body: PIN 143774 required for password reset on Apple.",,,,,,,False,,,,,none,verification,0.9,medium,0.5,[],none,,verify,,0.8,['PIN required for password reset'],False,False,
+"Subject: GitHub verification: 528905
+
+Body: Enter 892974 to verify password reset. Session will auto-cancel after 3 invalid attempts.",,,,,,,False,,,,,none,verification,0.9,medium,0.5,[],none,,verify,,0.8,['verify password reset'],False,False,
+"Subject: Authentication token: 411101
+
+Body: Token: 321516 expires at 16:20 PST. For support, contact no-reply@auth.com.",,expires at 16:20 PST,,,16:20:00,16:20:00,False,,,,,none,notification,0.8,medium,0.5,[],none,,none,,0.0,[],False,False,
+"Subject: Your appointment confirmed: Dec 20, 3-5AM GMT
+
+Body: Thank you! $156.50 payment applied to account. Receipt: company.com/updates.",2023-12-20 03:00:00+00:00,"Dec 20, 3-5AM GMT",2023-12-20,2023-12-20,03:00:00,05:00:00,True,,,,,none,appointment,1.0,low,0.0,[],none,,none,,0.0,[],True,False,$156.50
+"Subject: New reply in ""Home Server Setup""
+
+Body: Thread ""Discussion 232"" moved from General to Support. Continue: forum.com/thread/123.",,,,,,,False,,,,,none,notification,0.7,low,0.1,[],none,,none,,0.0,[],True,False,
+"Subject: Member Exclusive: Extra 20% off clearance
+
+Body: Hello valued member, enjoy Free shipping all week. Shop now: example.com/3034 Expires {date}.",,,,,,,False,,,,,none,notification,0.8,medium,0.5,[],none,,click,,0.7,['Shop now'],True,False,
+"Subject: Nearby: Product Launch today 9AM
+
+Body: story from Paris received 234 likes and 67 comments. See insights: social.com/insights/post123.",2023-10-10 09:00:00,today 9AM,2023-10-10,2023-10-10,09:00:00,09:00:00,True,,,,,none,notification,0.8,medium,0.5,[],none,,none,,0.0,[],True,False,
+"Subject: Your post was moved to ""General Discussion""
+
+Body: Thread ""Discussion 958"" moved from General to Support. Continue: forum.com/thread/123.",,,,,,,False,,,,,none,notification,0.8,low,0.1,[],none,,none,,0.0,[],True,False,
+"Subject: AMA session: Science Professor
+
+Body: {event} starts {time}. Prepare: forum.com/thread/123.",,,,,,,False,,,,,none,other,0.5,low,0.0,[],none,,click,,0.5,['Prepare'],True,False,
+"Subject: Payment received: Invoice INV-7891
+
+Body: We've updated our Privacy Policy. Review changes: company.com/updates Effective Dec 20.",,Effective Dec 20,2023-12-20,2023-12-20,,,False,,,,,none,notification,0.8,low,0.1,[],none,,review,,0.7,['Review changes'],True,False,
+"Subject: New thread in ""Career Advice"" matches alert
+
+Body: report per report #1093. Details: wiki.site/page/789.",,,,,,,False,,,,,none,notification,0.7,low,0.1,[],none,,none,,0.0,[],True,False,
+"Subject: Verification PIN: 411101
+
+Body: Your access code is 421450 for password reset. Valid once only.",,,,,,,False,,,,,none,verification,0.9,low,0.1,[],none,,verify,,0.8,"['access code', 'password reset']",False,False,
+"Subject: Auto-payment failed for subscription
+
+Body: Your September statement is available. View/download: company.com/updates No action needed if payment scheduled.",,September statement,,,,,False,,,,,none,notification,0.8,low,0.1,[],none,,none,,0.0,[],True,False,
+"Subject: Login code: 776979 (do not reply)
+
+Body: Enter 647375 to verify password reset. Session will auto-cancel after 2 invalid attempts.",,,,,,,False,,,,,none,verification,0.8,medium,0.5,[],none,,verify,,0.7,['verify password reset'],False,False,
+"Subject: Your anniversary discount is here!
+
+Body: Hello valued member, enjoy Buy one get one free. Shop now: example.com/6995 Expires {date}.",,{date},,,,,False,,,,,none,notification,0.7,medium,0.5,[],none,,click,,0.8,['Shop now'],True,False,
+"Subject: Password Reset PIN: 552637
+
+Body: Your account recovery PIN is 552637. Submit within 5 minutes at resetportal.com. Browser details: Firefox on Windows 11 from IP 108.45.xx.xx. Suspicious activity monitoring activated.",,Submit within 5 minutes,,,,,False,,resetportal.com,,,virtual,verification,0.8,high,0.9,['within 5 minutes'],none,,click,,0.9,['Submit within 5 minutes'],True,False,
+"Subject: Warning: Violation in Python Coding Challenge
+
+Body: Thread: ""Discussion 574"" started by PixelArtist. Settings: forum.com/thread/123.",,,,,,,False,,,,,none,notification,0.7,medium,0.5,[],none,,none,,0.0,[],True,False,
+"Subject: Last chance: End of season sale
+
+Body: Celebrate with 30% off entire purchase. Valid 48: example.com/6939 Code: SAVE50.",,,,,,,False,,,,,none,notification,0.7,high,0.8,['last chance'],none,,click,,0.6,['Celebrate with 30% off entire purchase'],True,False,30%
+"Subject: Membership upgrade: delivered achieved!
+
+Body: We've updated our User Agreement. Review changes: company.com/updates Effective Oct 5.",,Effective Oct 5,2023-10-05,2023-10-05,,,False,,,,,none,notification,0.8,low,0.1,[],none,,review,,0.7,['Review changes'],True,False,
+"Subject: Mod application open for Technical Support
+
+Body: User: PixelArtist posted helpful solution. View: wiki.site/page/789.",,,,,,,False,,,,,none,notification,0.7,low,0.0,[],none,,none,,0.0,[],True,False,
+"Subject: Event invitation: Workshop Oct 10
+
+Body: View profile: platform.com/users/sarah Accept/reject: social.com/friends/pending.",,Oct 10,2023-10-10,2023-10-10,,,False,,,,,none,other,0.5,low,0.1,[],none,,none,,0.0,[],True,False,
+"Subject: Wiki Edit Approved: techsupport
+
+Body: comment per report #7912. Details: forum.com/thread/123.",,,,,,,False,,,,,none,notification,0.7,low,0.1,[],none,,none,,0.0,[],True,False,
+"Subject: [Moderator] Your comment was processed
+
+Body: Thread ""Discussion 858"" moved from General to Support. Continue: wiki.site/page/789.",,,,,,,False,,wiki.site/page/789,,,virtual,notification,0.8,low,0.1,[],none,,click,,0.7,['Continue'],True,False,
+"Subject: Gourmet Food Festival Pass
+
+Body: VIP tasting experience $99 (regular $150): gourmetevents.com/festival-pass. Unlimited samples from 50+ artisans. Complimentary wine pairing guide.",,,,,,,False,,,,,none,payment,0.8,low,0.1,[],none,,pay,,0.9,['VIP tasting experience $99'],True,False,$99
+"Subject: Appointment reminder: Eye Exam, Aug 15 3-5AM GMT
+
+Body: New features: Security updates. Install now: service.com/status Changelog included.",2023-08-15 03:00:00+00:00,Aug 15 3-5AM GMT,2023-08-15,2023-08-15,03:00:00,05:00:00,True,,,,,none,appointment,0.9,low,0.1,[],none,,none,,0.0,[],True,False,
+"Subject: New event: Product Launch
+
+Body: article from Sydney received 875 likes and 12 comments. See insights: social.com/insights/post123.",,,,,,,False,,,,,none,notification,0.5,low,0.0,[],none,,none,,0.0,[],True,False,
+"Subject: John Smith liked your article
+
+Body: Group ""Photography Group"" invited you. RSVP: platform.com/events/workshop.",,,,,,,False,,platform.com/events/workshop,,,virtual,notification,0.7,low,0.1,[],none,,reply,,0.6,['RSVP'],True,False,
+"Subject: 8 new messages in ""Tech Enthusiasts"" chat
+
+Body: Group update: ""Hiking Buddies"" posted story. Trending in ""Remote Workers"": favorite tech tools.",,,,,,,False,,,,,none,notification,0.8,low,0.0,[],none,,none,,0.0,[],False,False,
+"Subject: Warning: Violation in Home Server Setup
+
+Body: User: DataWiz report. support.site/ticket/456.",,,,,,,False,,,,,none,notification,0.7,high,0.8,[],none,,none,,0.0,[],True,False,
+"Subject: 5th anniversary on LinkedIn!
+
+Body: Group ""Photography Group"" invited you. RSVP: social.com/events/meetup.",,,,,,,False,,social.com/events/meetup,,,virtual,other,0.5,low,0.1,[],none,,click,,0.5,['RSVP'],True,False,
+"Subject: Login alert: Verification step needed
+
+Body: For account verification, enter: 930558. Do not share this number.",,,,,,,False,,,,,none,verification,0.9,low,0.1,[],none,,verify,,0.8,"['enter', 'verify']",False,False,
+"Subject: Achievement unlocked: Community Star!
+
+Body: {event} starts {time}. Prepare: wiki.site/page/789.",,,,,,,False,,,,,none,notification,0.7,low,0.1,[],none,,click,,0.8,['Prepare'],True,False,
+"Subject: Data usage alert: 80% of monthly quota
+
+Body: New features: Dark mode, performance boost. Install now: service.com/status Changelog included.",,,,,,,False,,,,,none,notification,0.8,low,0.1,[],none,,click,,0.7,['Install now'],True,False,
+"Subject: New featured guide: cooking
+
+Body: Thread: ""Discussion 777"" started by PixelArtist. Settings: support.site/ticket/456.",,,,,,,False,,,,,,,,,,[],,,,,,[],False,False,
+"Subject: Clearance madness: Up to 80% off books
+
+Body: As our loyal customer, get exclusive $40 off $150+: example.com/7776 Offer code: BIRTHDAY.",,,,,,,False,,,,,,,,,,[],,,,,,[],False,False,
+"Subject: VIP Preview: Summer sale
+
+Body: Discover {items}. Shop new styles: example.com/9842 Code VIP25 for extra 80% off.",,,,,,,False,,,,,none,notification,0.7,low,0.1,[],none,,click,,0.8,"['Shop new styles', 'Code VIP25 for extra 80% off']",True,False,80%
+"Subject: Early access: Clearance event start now
+
+Body: Your favorite items are back. Don't wait: example.com/8822 Use code VIP25 for 50% off.",,,,,,,False,,,,,none,notification,0.7,medium,0.5,"[""Don't wait""]",none,,click,,0.8,"[""Don't wait"", 'Use code VIP25']",True,False,50%
+"Subject: Forum digest: photography discussions
+
+Body: Database upgrade completed successfully. New features: new search and notifications. FAQ: wiki.site/page/789.",,,,,,,False,,,,,none,notification,0.8,low,0.0,[],none,,none,,0.0,[],True,False,
+"Subject: Your order #3345 has delivered
+
+Body: Hotel Booking New hours effective immediately, Oct 5, midnight-2AM. {assignment} confirmed. Manage booking: company.com/updates.",2023-10-05 00:00:00,"Oct 5, midnight-2AM",2023-10-05,2023-10-05,00:00:00,02:00:00,True,,,,,none,notification,0.8,low,0.1,[],none,,click,,0.7,['Manage booking'],True,False,
+"Subject: Anniversary Special: Buy one get one free
+
+Body: As our loyal customer, get exclusive $30 off $50+: example.com/8101 Offer code: SAVE50.",,,,,,,False,,,,,none,notification,0.7,low,0.1,[],none,,click,,0.6,['get exclusive $30 off $50+'],True,False,$30 off $50+
+"Subject: Molecular Dynamics Visualization
+
+Body: Protein folding simulation renderer. GitHub: mdb-visualization/issues VR compatibility.",,,,,,,False,,,,,,,,,,[],,,,,,[],False,False,
+"Subject: Access code: 229149
+
+Body: Enter 321516 to confirm new device registration. If you didn't request this, ignore.",,,,,,,False,,,,,none,verification,0.8,low,0.2,[],none,,confirm,,0.9,['confirm new device registration'],False,False,
+"Subject: New event: Product Launch
+
+Body: ""College reunion photos"" - view album: social.com/albums/vacation2018.",,,,,,,False,,,,,none,other,0.5,low,0.0,[],none,,click,,0.5,['view album'],True,False,
+"Subject: Delivery rescheduled for order #9876
+
+Body: 2FA activated per your request. Learn: banking.com/statements.",,,,,,,False,,,,,none,notification,0.8,low,0.0,[],none,,none,,0.0,[],True,False,
+"Subject: New event: Workshop
+
+Body: Your group ""Photography Group"" is live streaming. Join: social.com/live/conference.",,,,,,,False,,social.com/live/conference,,,virtual,other,0.5,low,0.0,[],none,,click,,0.5,['Join'],True,False,
+"Subject: Double rewards points this weekend
+
+Body: Discover {items}. Shop new styles: example.com/6941 Code VIP25 for extra 80% off.",,,,,,,False,,,,,none,notification,0.8,medium,0.5,[],none,,click,,0.7,"['Shop new styles', 'Code VIP25 for extra 80% off']",True,False,
+"Subject: [Moderator] Your report was processed
+
+Body: User: CodeMaster posted helpful solution. View: support.site/ticket/456.",,,,,,,False,,,,,none,notification,0.8,low,0.0,[],none,,none,,0.0,[],True,False,
+"Subject: Verification PIN: 417380
+
+Body: For password reset, enter: 411101. Do not share this number.",,,,,,,False,,,,,none,verification,0.9,low,0.1,[],none,,verify,,0.8,"['enter', 'do not share']",False,False,
+"Subject: User Spotlight: Member Spotlight
+
+Body: Revised rules effective immediately. Key changes: citation requirements for news posts. Review: wiki.site/page/789.",,,,,,,False,,,,,none,notification,0.7,high,0.8,['effective immediately'],none,,review,,0.6,['Review'],True,False,
+"Subject: Security upgrade: password encryption enabled
+
+Body: 2FA activated per your request. Learn: service.com/status.",,,,,,,False,,,,,none,notification,0.8,low,0.1,[],none,,none,,0.0,[],True,False,
+"Subject: New follower: David Kim
+
+Body: photo from Paris received 875 likes and 44 comments. See insights: platform.com/analytics/content.",,,,,,,False,,,,,none,notification,0.5,low,0.0,[],none,,none,,0.0,[],True,False,
+"Subject: Popular near you: New cafe opening
+
+Body: 12 friends checked in at ""Central Perk"". See photos and menu: social.com/places/central-perk.",,,,,,,False,Central Perk,,social.com/places/central-perk,,physical,notification,0.5,low,0.0,[],none,,none,,0.0,[],True,False,
+"Subject: LinkedIn Verification: G3J8-HS29
+
+Body: Confirm email change request: enter G3J8HS29 (no dash) at prompt. Case-sensitive.",,,,,,,False,,,,,none,verification,0.9,low,0.1,[],none,,confirm,,0.8,['confirm email change request'],False,False,
+"Subject: Early access: Summer sale start now
+
+Body: Your favorite items are back. Don't wait: example.com/1879 Use code VIP25 for 40% off.",,,,,,,False,,,,,none,notification,0.7,high,0.8,"[""Don't wait""]",none,,click,,0.9,"[""Don't wait"", 'Use code VIP25']",True,False,40%
+"Subject: 1st anniversary on Twitter!
+
+Body: article from Paris received 234 likes and 67 comments. See insights: platform.com/analytics/content.",,,,,,,False,,,,,,,,,,[],,,,,,[],False,False,
+"Subject: Live now: Workshop keynote
+
+Body: 23 friends checked in at ""Central Perk"". See photos and menu: social.com/places/cafe.",,,,,,,False,Central Perk,,social.com/places/cafe,,physical,other,0.5,low,0.0,[],none,,none,,0.0,[],True,False,
+"Subject: Forum Contest: Photo Contest
+
+Body: Trending: ""webdev"" (89 comments). View: support.site/ticket/456.",,,,,,,False,,,,,none,other,0.5,low,0.0,[],none,,none,,0.0,[],True,False,
+"Subject: Safety recall: Model CD-180
+
+Body: Restaurant New hours effective immediately, Oct 5, midnight-2AM. {assignment} confirmed. Manage booking: service.com/status.",2023-10-05 00:00:00,"Oct 5, midnight-2AM",2023-10-05,2023-10-05,00:00:00,02:00:00,True,,,,,none,notification,0.8,medium,0.5,[],none,,none,,0.0,[],True,False,
+"Subject: Forum maintenance: complete
+
+Body: Database upgrade completed successfully. New features: new search and notifications. FAQ: support.site/ticket/456.",,,,,,,False,,,,,none,maintenance,0.9,low,0.1,[],none,,none,,0.0,[],True,False,
+"Subject: Popular near you: Webinar
+
+Body: Mike: ""Check this out"" David: ""Weather looks great!"" Reply: platform.com/messages/group.",,,,,,,False,,platform.com/messages/group,,,virtual,notification,0.5,low,0.1,[],none,,reply,,0.7,"['Check this out', 'Reply']",True,False,
+"Subject: 1st anniversary on LinkedIn!
+
+Body: ""You were at Grand Canyon with Alex"" - view album: platform.com/memories/beach.",,,,,,,False,,,,,,,,,,[],,,,,,[],False,False,
+"Subject: Authentication token: 421450
+
+Body: Use this code: 286745 to complete sign-in. Expires in 15 minutes.",,Expires in 15 minutes.,,,,,False,,,,,none,verification,0.8,high,0.9,['Expires in 15 minutes'],none,,complete,,0.8,['Use this code to complete sign-in'],False,False,
+"Subject: Special offer just for you
+
+Body: Deal ends {time}! {items} at lowest prices. Shop now: example.com/1038 Use code: VIP25.",,,,,,,False,,,,,none,notification,0.7,high,0.8,"['ends', 'shop now']",none,,click,,0.9,['shop now'],True,False,
+"Subject: Service outage resolved
+
+Body: Yesterday's network connectivity problem fixed. All systems operational. Apologies for inconvenience.",,,,,,,False,,,,,none,notification,0.8,low,0.1,[],none,,none,,0.0,[],False,False,
+"Subject: Event Reminder: Book Club Tonight 8PM
+
+Body: Discussing ""Project Hail Mary"". Join Zoom: socialevents.com/virtual/book-club-238",,Tonight 8PM,,,20:00:00,20:00:00,False,,socialevents.com/virtual/book-club-238,,,virtual,reminder,0.9,medium,0.5,[],none,,click,,0.8,[],True,False,
+"Subject: Live now: Workshop keynote
+
+Body: View profile: social.com/profile/john123 Accept/reject: social.com/friends/pending.",,,,,,,False,,,,,none,notification,0.7,low,0.1,[],none,,click,,0.8,['Accept/reject'],True,False,
+"Subject: Nearby: Meetup today 6PM
+
+Body: ""Great insight!"" View: social.com/notifications Reply or disable: platform.com/notifications.",2023-10-10 18:00:00,today 6PM,2023-10-10,2023-10-10,18:00:00,18:00:00,True,,,,,none,meeting,0.9,medium,0.5,['today'],none,,none,,0.0,[],True,False,
+"Subject: News from groups you follow
+
+Body: Group ""Book Club"" invited you. RSVP: platform.com/events/workshop.",,,,,,,False,,platform.com/events/workshop,,,virtual,notification,0.7,low,0.1,[],none,,reply,,0.8,['RSVP'],True,False,
+"Subject: Twitter verification: 555748
+
+Body: Token: 748435 expires at 16:20 PST. For support, contact no-reply@auth.com.",,Token: 748435 expires at 16:20 PST.,,,16:20:00,16:20:00,False,,,,,none,verification,0.9,medium,0.5,[],none,,verify,,0.8,['expires at 16:20 PST'],False,False,
+"Subject: Synesthesia Perception Mapping Project
+
+Body: Share cross-sensory experiences. Research: perceptual-studies.org Neurological diversity.",,,,,,,False,,,,,none,other,0.5,low,0.1,[],none,,none,,0.0,[],True,False,
+"Subject: Immunization Record Updated
+
+Body: Flu vaccine and COVID-19 booster added to profile. Access digital vaccine passport: healthportal.com/vaccine-record. QR code available for travel verification.",,,,,,,False,,healthportal.com/vaccine-record,,,virtual,notification,0.8,low,0.1,[],none,,click,,0.7,['Access digital vaccine passport'],True,False,
+"Subject: News: David Kim started new position
+
+Body: Your group ""Photography Group"" is live streaming. Join: social.com/live/conference.",,,,,,,False,,social.com/live/conference,,,virtual,notification,0.8,low,0.1,[],none,,click,,0.7,['Join'],True,False,
+"Subject: Security Token: 112233
+
+Body: Use 112233 for account recovery. Single-use only.",,,,,,,False,,,,,none,verification,0.8,low,0.1,[],none,,verify,,0.9,['Use 112233 for account recovery'],False,False,
+"Subject: Event invitation: Workshop Aug 25
+
+Body: article from Paris received 678 likes and 12 comments. See insights: platform.com/analytics/content.",,Aug 25,2023-08-25,2023-08-25,,,False,,,,,none,other,0.5,low,0.0,[],none,,none,,0.0,[],True,False,
+"Subject: Platform Evolution: Major Feature Enhancements
+
+Body: Based on your feedback, we've launched revolutionary updates: 1) Collaborative whiteboard spaces, 2) 4K HDR video streaming, 3) Smart content curation AI. Explore new features: platformupdates.com/october-release?version=9.0. Temporary legacy interface available until December 1. Notable improvements: 60% faster loading, enhanced accessibility compliance, and cross-platform synchronization. Premium members receive early access to experimental features - opt-in through settings. Report bugs via in-app feedback system with priority routing.",,,,,,,False,,,,,,,,,,[],,,,,,[],False,False,
+"Subject: Your order #9876 has shipped
+
+Body: Yesterday's server maintenance fixed. All systems operational. Apologies for inconvenience.",,,,,,,False,,,,,none,maintenance,0.8,low,0.1,[],none,,none,,0.0,[],False,False,
+"Subject: Poll: Vote for weekend plans
+
+Body: ""Beach vacation with family"" - view album: platform.com/memories/beach.",,,,,,,False,,,,,none,other,0.5,low,0.1,[],none,,none,,0.0,[],True,False,
+"Subject: New thread in ""Book Club"" matches alert
+
+Body: {event} starts {time}. Prepare: forum.com/thread/123.",,,,,,,False,,forum.com/thread/123,,,virtual,notification,0.8,low,0.0,[],none,,click,,0.7,['Prepare'],True,False,
+"Subject: Scheduled maintenance: Oct 5, 2-4AM PST
+
+Body: New features: Security updates. Install now: company.com/updates Changelog included.",2023-10-05 02:00:00,"Oct 5, 2-4AM PST",2023-10-05,2023-10-05,02:00:00,04:00:00,True,,,,,none,maintenance,1.0,medium,0.5,[],none,,click,,0.8,['Install now'],True,False,
+"Subject: Your anniversary discount is here!
+
+Body: As our loyal customer, get exclusive $80 off $100+: example.com/2684 Offer code: BIRTHDAY.",,,,,,,False,,,,,none,notification,0.8,low,0.1,[],none,,click,,0.7,['exclusive $80 off $100+'],True,False,$80 off $100+
+"Subject: Account Recovery: 778899
+
+Body: Recovery code 778899. Store in secure location.",,,,,,,False,,,,,none,verification,0.8,low,0.1,[],none,,none,,0.0,[],False,False,
