@@ -4,12 +4,18 @@ import pandas as pd
 import streamlit as st
 from openai import OpenAI
 import re
+import requests
+from dotenv import load_dotenv
 
 
-st.set_page_config(page_title="Receive Email", page_icon="📥", layout="wide")
-st.title("📥 Receive Email")
+st.set_page_config(page_title="Email Prediction and Extraction", page_icon="📥", layout="wide")
+st.title("Email Prediction and Extraction")
 st.caption("Select one email record, review details, then click 'Receive' to proceed.")
 
+# Backend API configuration
+load_dotenv()  # Load .env file if it exists
+
+BACKEND_URL = os.getenv("BACKEND_API", "http://127.0.0.1:8000")
 
 def load_local_data():
     try:
@@ -62,56 +68,51 @@ def create_openai_client():
         return None
 
 
-def generate_calendar_event_via_llm(email_text: str) -> dict:
-    """Ask GPT to create a calendar event object matching our calendar schema."""
-    client = create_openai_client()
-    if not client or not isinstance(email_text, str) or not email_text.strip():
-        return {}
-
-    system_prompt = (
-        "You generate calendar events from emails. Return valid JSON with keys: "
-        "title (string), start (ISO datetime), end (ISO datetime), description (string), "
-        "location (string), label (one of: meeting, appointment, deadline, reminder, other). "
-        "Keep it concise; if any field is unknown, use empty string. If end is unknown, copy start."
-    )
-    user_prompt = f"Email to analyze and summarize into a calendar event:\n\n{email_text}"
-
+def call_function_call_api(email_data: dict) -> dict:
+    """Call backend API /function_call endpoint to process email and create calendar event"""
     try:
-        resp = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            temperature=0,
-            max_tokens=200,
-            response_format={"type": "json_object"},
+        response = requests.post(
+            f"{BACKEND_URL}/function_call",
+            json=email_data,
+            timeout=30  # Longer timeout for LLM processing
         )
-        data = json.loads(resp.choices[0].message.content)
-        # Basic normalization
-        event = {
-            "title": str(data.get("title", "")).strip(),
-            "start": str(data.get("start", "")).strip(),
-            "end": str(data.get("end", "")).strip(),
-            "description": str(data.get("description", "")).strip(),
-            "location": str(data.get("location", "")).strip(),
-            "label": (str(data.get("label", "other")).strip() or "other"),
-        }
-        # sanity: ensure label is allowed
-        if event["label"] not in {"meeting", "appointment", "deadline", "reminder", "other"}:
-            event["label"] = "other"
-        # simple ISO check (very light)
-        for k in ("start", "end"):
-            if event[k] and not re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}", event[k]):
-                # leave as-is; frontend will coerce or user can edit later
-                pass
-        if not event["end"] and event["start"]:
-            event["end"] = event["start"]
-        return event
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.ConnectionError:
+        st.error("Cannot connect to backend server. Please ensure the backend is running on port 8000.")
+        return None
+    except requests.exceptions.Timeout:
+        st.error("Request timed out. The backend may be processing - please try again.")
+        return None
+    except requests.exceptions.HTTPError as e:
+        st.error(f"HTTP Error: {e.response.status_code} - {e.response.text}")
+        return None
     except Exception as e:
-        st.warning(f"Event generation failed: {e}")
-        return {}
+        st.error(f"Failed to call API: {str(e)}")
+        return None
 
+def call_predict_api(email_data: dict) -> dict:
+    """Call backend API /predict endpoint to process email and create calendar event"""
+    try:
+        response = requests.post(
+            f"{BACKEND_URL}/predict",
+            json=email_data,
+            timeout=30  # Longer timeout for LLM processing
+        )
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.ConnectionError:
+        st.error("Cannot connect to backend server. Please ensure the backend is running on port 8000.")
+        return None
+    except requests.exceptions.Timeout:
+        st.error("Request timed out. The backend may be processing - please try again.")
+        return None
+    except requests.exceptions.HTTPError as e:
+        st.error(f"HTTP Error: {e.response.status_code} - {e.response.text}")
+        return None
+    except Exception as e:
+        st.error(f"Failed to call API: {str(e)}")
+        return None
 
 data = load_local_data()
 if not data:
@@ -121,41 +122,119 @@ if not data:
 
 colA, colB = st.columns([1, 3])
 with colA:
-    idx_display = st.number_input("Index", min_value=1, max_value=len(data), value=1, step=1)
-    idx = idx_display - 1  # Convert to 0-based for array access
-    preview_len = st.slider("Preview length", 40, 400, 160)
-    if st.button("Receive Email", type="primary"):
+    idx_display = st.number_input("Email No.", min_value=0, max_value=len(data), value=0, step=1)
+    idx = idx_display
+    if st.button("Predict Email Category", type="primary"):
         st.session_state['received_email_index'] = idx_display  # Store 1-based index
-        st.session_state['received_email_item'] = data[idx]
-        st.success(f"Received email #{idx_display}")
-        # Auto-create calendar event for final-type emails
         received_item = data[idx]
+        subject = received_item.get("subject", "")
+        body = received_item.get("body", "")
+        st.session_state['received_email_item'] = received_item
+
+        # Auto-create calendar event for final-type emails via backend API
         etype = (received_item.get("event_type") or "").strip().lower()
-        if etype == "final":
-            evt = generate_calendar_event_via_llm(received_item.get("email_text", ""))
-            # 仅当包含有效起始时间（ISO 格式且含时间部分）时才创建
-            if evt and isinstance(evt.get("start"), str) and re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}", evt.get("start")):
-                events = load_events()
-                events.append(evt)
-                if save_events(events):
-                    st.info("Auto-created calendar event from FINAL email")
+        
+        with st.spinner("Processing email..."):
+            # add button to choose which model to be used, between 1 2 or 3
+            model_choice = st.radio("Choose model:", (1, 2, 3))
+            if etype == "final":
+                # Prepare data for backend API
+                email_payload = {
+                    "subject": subject,
+                    "body": body,
+                    "model": model_choice
+                }
+                
+                # Call backend API
+                api_response = call_predict_api(email_payload)
+                
+                if api_response:
+                    # Check if event was created
+                    if api_response.get("status") == "success":
+                        created_event = api_response.get("event")
+                        if created_event:
+                            # Save to local calendar as well for UI display
+                            events = load_events()
+                            events.append(created_event)
+                            save_events(events)
+                            st.success(f"Received email #{idx_display}")
+                            st.info(f"Calendar event created: '{created_event.get('title', 'Untitled')}'")
+                        else:
+                            st.success(f"Received email #{idx_display}")
+                            st.info("No calendar event created (missing time or requirements)")
+                    else:
+                        st.info(api_response)
+                        st.warning(f"Email received but event creation failed: {api_response.get('message', 'Unknown error')}")
+                else:
+                    st.error("Failed to process email via backend API")
             else:
-                st.info("Skipped creating calendar event (missing time)")
+                # Non-final emails: just acknowledge receipt
+                st.success(f"Received email #{idx_display} (Type: {etype})")
+    elif st.button("Extract and Manage Email Features", type="primary"):
+        st.session_state['received_email_index'] = idx_display  # Store 1-based index
+        received_item = data[idx]
+        subject = received_item.get("subject", "")
+        body = received_item.get("body", "")
+        st.session_state['received_email_item'] = received_item
+        
+        # Auto-create calendar event for final-type emails via backend API
+        etype = (received_item.get("event_type") or "").strip().lower()
+        
+        with st.spinner("Processing email..."):
+            if etype == "final":
+                # Prepare data for backend API
+                email_payload = {
+                    "subject": subject,
+                    "body": body,
+                }
+                
+                # Call backend API
+                api_response = call_function_call_api(email_payload)
+                
+                if api_response:
+                    # Check if event was created
+                    if api_response.get("status") == "success":
+                        created_event = api_response.get("event")
+                        if created_event:
+                            # Save to local calendar as well for UI display
+                            events = load_events()
+                            events.append(created_event)
+                            save_events(events)
+                            st.success(f"Received email #{idx_display}")
+                            st.info(f"Calendar event created: '{created_event.get('title', 'Untitled')}'")
+                        else:
+                            st.success(f"Received email #{idx_display}")
+                            st.info("No calendar event created (missing information)")
+                    else:
+                        st.info(api_response)
+                        st.warning(f"Email received but event creation failed: {api_response.get('message', 'Unknown error')}")
+                else:
+                    st.error("Failed to process email via backend API")
+            else:
+                # Non-final emails: just acknowledge receipt
+                st.success(f"Received email #{idx_display} (Type: {etype})")
 
 with colB:
-    item = data[idx]
     st.subheader("Email Content")
-    full_text = item.get("email_text", "")
-    etype = item.get("event_type") or "(none)"
-    st.markdown(f"**Event type:** `{etype}`")
-    st.text_area("", full_text[:preview_len] + ("..." if len(full_text) > preview_len else ""), height=240, disabled=True)
+    if(idx>4):
+        subject = ""
+        body = ""
+    else:
+        item = data[idx]
+        subject = item.get("subject", "")
+        body = item.get("body", "")
+        features = {k: v for k, v in item.items() if k != 'email_text'}
+    
+    st.markdown("**Subject:**")
+    st.text_area("", subject, key="subject_area", height=100)
+    
+    st.markdown("**Body:**")
+    st.text_area("", body, key="body_area", height=300)
 
 st.divider()
 st.subheader("Extracted Features")
-features = {k: v for k, v in item.items() if k != 'email_text'}
-if features:
+
+if 'features' in locals():
     st.json(features)
 else:
     st.info("No features available for this record")
-
-

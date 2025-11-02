@@ -8,11 +8,18 @@ import calendar as cal
 import altair as alt
 import plotly.express as px
 import plotly.graph_objects as go
+import requests
+from dotenv import load_dotenv
 
 
 st.set_page_config(page_title="Calendar", page_icon="🗓️", layout="wide")
 st.title("Calendar")
 st.caption("Visualize events on a calendar")
+
+# Backend API configuration
+load_dotenv()  # Load .env file if it exists
+
+BACKEND_URL = os.getenv("BACKEND_API", "http://127.0.0.1:8000")
 
 
 def calendar_path():
@@ -45,26 +52,50 @@ def load_events():
     return []
 
 
-def save_events(events):
-    # events_example = {
-    #     "title": "Team Standup",
-    #     "start": "2025-11-01T09:00:00",
-    #     "end": "2025-11-01T09:30:00",
-    #     "description": "Daily team sync meeting",
-    #     "location": "Conference Room A",
-    #     "label": "meeting"
-    # }
+# def save_events(events):
+#     # events_example = {
+#     #     "title": "Team Standup",
+#     #     "start": "2025-11-01T09:00:00",
+#     #     "end": "2025-11-01T09:30:00",
+#     #     "description": "Daily team sync meeting",
+#     #     "location": "Conference Room A",
+#     #     "label": "meeting"
+#     # }
 
-    # to do: add elements like urgency_level, meeting_url, etc.
-    path = calendar_path()
+#     # to do: add elements like urgency_level, meeting_url, etc.
+#     path = calendar_path()
+#     try:
+#         os.makedirs(os.path.dirname(path), exist_ok=True)
+#         with open(path, "w", encoding="utf-8") as f:
+#             json.dump(events, f, ensure_ascii=False, indent=2)
+#         return True
+#     except Exception as e:
+#         st.error(f"Failed to save calendar: {e}")
+#         return False
+
+
+def create_event_api(event_data):
+    """Call backend API to create a new event"""
     try:
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(events, f, ensure_ascii=False, indent=2)
-        return True
+        response = requests.post(
+            f"{BACKEND_URL}/create",
+            json=event_data,
+            timeout=10
+        )
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.ConnectionError:
+        st.error("❌ Cannot connect to backend server. Please ensure the backend is running on port 8000.")
+        return None
+    except requests.exceptions.Timeout:
+        st.error("❌ Request timed out. Please try again.")
+        return None
+    except requests.exceptions.HTTPError as e:
+        st.error(f"❌ HTTP Error: {e.response.status_code} - {e.response.text}")
+        return None
     except Exception as e:
-        st.error(f"Failed to save calendar: {e}")
-        return False
+        st.error(f"❌ Failed to create event: {str(e)}")
+        return None
 
 
 def get_events_for_date(events, date):
@@ -524,14 +555,14 @@ if events:
                                 e for e in st.session_state.calendar_events 
                                 if e["title"] != row["title"] or e["start"] != row["start"].isoformat()
                             ]
-                            save_events(st.session_state.calendar_events)
+                            # save_events(st.session_state.calendar_events)
                             st.rerun()
         else:
             st.info("No events this month")
     except Exception as e:
         st.error(f"Failed to display events: {e}")
 else:
-    st.info("No events yet. Use the form above to add one.")
+    st.info("No events yet. Use the form below to add one.")
 st.markdown("---")
 
 with st.form("new_event_form", clear_on_submit=True):
@@ -571,10 +602,21 @@ with st.form("new_event_form", clear_on_submit=True):
                 "location": location,
                 "label": label
             }
-            st.session_state.calendar_events.append(new_event)
-            if save_events(st.session_state.calendar_events):
-                st.success("Event added successfully!")
-                st.rerun()
+            
+            # Call backend API
+            with st.spinner("Creating event..."):
+                api_response = create_event_api(new_event)
+            
+            if api_response:
+                # Add to local state and save
+                st.session_state.calendar_events.append(new_event)
+                # if save_events(st.session_state.calendar_events):
+                #     st.success(f"✅ Event '{title}' created successfully!")
+                #     st.rerun()
+                # else:
+                #     st.warning("⚠️ Event created via API but failed to save locally")
+            else:
+                st.error("Failed to create event. Please check backend connection.")
 
 # st.divider()
 
