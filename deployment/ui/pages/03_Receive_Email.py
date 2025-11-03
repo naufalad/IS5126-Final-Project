@@ -11,6 +11,40 @@ from dotenv import load_dotenv
 st.set_page_config(page_title="Email Prediction and Extraction", page_icon="📥", layout="wide")
 st.title("Email Prediction and Extraction")
 st.caption("Select one email record, review details, then click 'Receive' to proceed.")
+# --- DARK THEME ---
+st.markdown("""
+<style>
+/* Background & fonts */
+.main { background-color: #121212; color: #FFFFFF; font-family: 'Inter', sans-serif; padding: 20px; }
+h1,h2,h3,h4,h5 { color:#FFFFFF; font-weight:600; }
+.stText, .stCaption, .stMarkdown { color: #B3B3B3 !important; }
+
+/* Sidebar */
+[data-testid="stSidebar"] { background-color: #000000; color:white; }
+
+/* Buttons */
+button[kind="primary"] { background-color:#1DB954 !important; color:white !important; border-radius:6px !important; border:none !important; }
+button[kind="primary"]:hover { background-color:#1ed760 !important; }
+
+/* Textareas & inputs */
+textarea, input, select { background-color: #1e1e1e !important; color: white !important; border-radius:6px !important; }
+
+/* Divider */
+hr { border: 1px solid #333; }
+</style>
+""", unsafe_allow_html=True)
+
+# --- HEADER ---
+st.markdown("""
+<div style="display:flex;align-items:center;gap:12px;">
+<svg width="28" height="28" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="#1DB954">
+<path d="M20 20H4V4" stroke="#1DB954" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M4 16.5L12 9L15 12L19.5 7.5" stroke="#1DB954" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<h1 style="margin:0;">Email Prediction & Extraction</h1>
+</div>
+""", unsafe_allow_html=True)
+st.caption("Select one email record, review details, then click 'Receive' to proceed.")
 
 # Backend API configuration
 load_dotenv()  # Load .env file if it exists
