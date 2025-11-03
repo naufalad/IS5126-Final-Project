@@ -124,6 +124,7 @@ colA, colB = st.columns([1, 3])
 with colA:
     idx_display = st.number_input("Email No.", min_value=0, max_value=len(data), value=0, step=1)
     idx = idx_display
+    model_choice = st.radio("Choose classification model:", [1, 2, 3], horizontal=True)
     if st.button("Predict Email Category", type="primary"):
         st.session_state['received_email_index'] = idx_display  # Store 1-based index
         received_item = data[idx]
@@ -131,88 +132,72 @@ with colA:
         body = received_item.get("body", "")
         st.session_state['received_email_item'] = received_item
 
-        # Auto-create calendar event for final-type emails via backend API
-        etype = (received_item.get("event_type") or "").strip().lower()
-        
+        # Prepare data for backend API
+        email_payload = {
+            "subject": subject,
+            "body": body,
+            "model": model_choice
+        }
+    
         with st.spinner("Processing email..."):
-            # add button to choose which model to be used, between 1 2 or 3
-            model_choice = st.radio("Choose model:", (1, 2, 3))
-            if etype == "final":
-                # Prepare data for backend API
-                email_payload = {
-                    "subject": subject,
-                    "body": body,
-                    "model": model_choice
-                }
-                
-                # Call backend API
-                api_response = call_predict_api(email_payload)
-                
-                if api_response:
-                    # Check if event was created
-                    if api_response.get("status") == "success":
-                        created_event = api_response.get("event")
-                        if created_event:
-                            # Save to local calendar as well for UI display
-                            events = load_events()
-                            events.append(created_event)
-                            save_events(events)
-                            st.success(f"Received email #{idx_display}")
-                            st.info(f"Calendar event created: '{created_event.get('title', 'Untitled')}'")
-                        else:
-                            st.success(f"Received email #{idx_display}")
-                            st.info("No calendar event created (missing time or requirements)")
+            # Call backend API
+            api_response = call_predict_api(email_payload)
+            
+            if api_response:
+                # Check if event was created
+                if api_response.get("status") == "success":
+                    created_event = api_response.get("event")
+                    if created_event:
+                        # Save to local calendar as well for UI display
+                        events = load_events()
+                        events.append(created_event)
+                        save_events(events)
+                        st.success(f"Received email #{idx_display}")
+                        st.info(f"Calendar event created: '{created_event.get('title', 'Untitled')}'")
                     else:
-                        st.info(api_response)
-                        st.warning(f"Email received but event creation failed: {api_response.get('message', 'Unknown error')}")
+                        st.success(f"Received email #{idx_display}")
+                        st.info("No calendar event created (missing time or requirements)")
                 else:
-                    st.error("Failed to process email via backend API")
+                    st.info(api_response)
+                    st.warning(f"Email received but event creation failed: {api_response.get('message', 'Unknown error')}")
             else:
-                # Non-final emails: just acknowledge receipt
-                st.success(f"Received email #{idx_display} (Type: {etype})")
-    elif st.button("Extract and Manage Email Features", type="primary"):
+                st.error("Failed to process email via backend API")
+    if st.button("Extract and Manage Email Features", type="primary"):
         st.session_state['received_email_index'] = idx_display  # Store 1-based index
         received_item = data[idx]
         subject = received_item.get("subject", "")
         body = received_item.get("body", "")
         st.session_state['received_email_item'] = received_item
         
-        # Auto-create calendar event for final-type emails via backend API
-        etype = (received_item.get("event_type") or "").strip().lower()
-        
         with st.spinner("Processing email..."):
-            if etype == "final":
-                # Prepare data for backend API
-                email_payload = {
-                    "subject": subject,
-                    "body": body,
-                }
-                
-                # Call backend API
-                api_response = call_function_call_api(email_payload)
-                
-                if api_response:
-                    # Check if event was created
-                    if api_response.get("status") == "success":
-                        created_event = api_response.get("event")
-                        if created_event:
-                            # Save to local calendar as well for UI display
-                            events = load_events()
-                            events.append(created_event)
-                            save_events(events)
-                            st.success(f"Received email #{idx_display}")
-                            st.info(f"Calendar event created: '{created_event.get('title', 'Untitled')}'")
-                        else:
-                            st.success(f"Received email #{idx_display}")
-                            st.info("No calendar event created (missing information)")
+            # Prepare data for backend API
+            email_payload = {
+                "subject": subject,
+                "body": body,
+            }
+            
+            # Call backend API
+            api_response = call_function_call_api(email_payload)
+            
+            if api_response:
+                # Check if event was created
+                if api_response.get("status") == "success":
+                    created_event = api_response.get("event")
+                    if created_event:
+                        # Save to local calendar as well for UI display
+                        events = load_events()
+                        events.append(created_event)
+                        save_events(events)
+                        st.success(f"Received email #{idx_display}")
+                        st.info(f"Calendar event created: '{created_event.get('title', 'Untitled')}'")
                     else:
-                        st.info(api_response)
-                        st.warning(f"Email received but event creation failed: {api_response.get('message', 'Unknown error')}")
+                        st.success(f"Received email #{idx_display}")
+                        st.info("No calendar event created (missing information)")
                 else:
-                    st.error("Failed to process email via backend API")
+                    st.info(api_response)
+                    st.warning(f"Email received but event creation failed: {api_response.get('message', 'Unknown error')}")
             else:
-                # Non-final emails: just acknowledge receipt
-                st.success(f"Received email #{idx_display} (Type: {etype})")
+                st.error("Failed to process email via backend API")
 
 with colB:
     st.subheader("Email Content")

@@ -170,6 +170,7 @@ class FunctionCall():
 
     # function wrapper for function calling
     def function_call(self, function:str, **kwargs):
+        result = None
         if function == "create_calendar_event":
             result = self.create_calendar_event(**kwargs)
         elif function == "spotify_link_discovery":
@@ -217,99 +218,118 @@ def call_llm(system_prompt: str, user_prompt: str) -> str:
         temperature=0.1,
         max_tokens=500
     )
-    return response.choices[0].message.content.strip()
+    return response.choices[0].message.content
 
 def extract_email_features(email_text: str, subject: str = "") -> EmailFeatures:
-    SYSTEM_PROMPT = (
-        """You are an expert email analyzer. Extract structured information from emails and return it in the specified JSON format.
+    client = create_openai_client()
+    if not client:
+        raise ValueError("OpenAI client not initialized. Set OPENAI_API_KEY.")
+    try:
+        schema = {
+            "name": "email_features",
+            "schema": EmailFeatures.model_json_schema(),
+            "strict": False
+        }
+        system_prompt = (
+            """You are an expert email analyzer. Extract structured information from emails and return it in the specified JSON format.
 
-            Focus on identifying:
-            1. Scheduled dates/times (appointments, deadlines, events) - extract date ranges and time ranges
-            2. Urgency indicators (urgent, asap, now, today, deadline, final notice, etc.)
-            3. Event types (meetings, payments, verifications, etc.)
-            4. Required actions (confirm, reply, pay, verify, etc.)
-            5. Recurrence patterns (daily, weekly, monthly, etc.)
-            6. Financial amounts and deadlines
-            7. Location information (physical addresses, venue names, virtual meeting URLs, coordinates)
+                Focus on identifying:
+                1. Scheduled dates/times (appointments, deadlines, events) - extract date ranges and time ranges
+                2. Urgency indicators (urgent, asap, now, today, deadline, final notice, etc.)
+                3. Event types (meetings, payments, verifications, etc.)
+                4. Required actions (confirm, reply, pay, verify, etc.)
+                5. Recurrence patterns (daily, weekly, monthly, etc.)
+                6. Financial amounts and deadlines
+                7. Location information (physical addresses, venue names, virtual meeting URLs, coordinates)
 
-            For dates and times:
-            - Extract start and end dates separately (date_from and date_to in YYYY-MM-DD format)
-            - Extract start and end times separately (time_from and time_to in HH:MM:SS 24-hour format)
-            - If only one date mentioned, use same value for both date_from and date_to
-            - If only one time mentioned, use same value for both time_from and time_to
-            - Convert 12-hour format to 24-hour (1 PM = 13:00:00, 2:30 PM = 14:30:00, etc.)
-            - Set has_complete_datetime to true only if BOTH date AND time are present
+                For dates and times:
+                - Extract start and end dates separately (date_from and date_to in YYYY-MM-DD format)
+                - Extract start and end times separately (time_from and time_to in HH:MM:SS 24-hour format)
+                - If only one date mentioned, use same value for both date_from and date_to
+                - If only one time mentioned, use same value for both time_from and time_to
+                - Convert 12-hour format to 24-hour (1 PM = 13:00:00, 2:30 PM = 14:30:00, etc.)
+                - Set has_complete_datetime to true only if BOTH date AND time are present
 
-        Return valid JSON matching the EmailFeatures schema exactly."""
-    )
-    full_text = f"Subject: {subject}\n\nBody: {email_text}" if subject else email_text
-    user_prompt = f"""Analyze this email and extract structured features:
-        {full_text}
+            Return valid JSON matching the EmailFeatures schema exactly."""
+        )
+        full_text = f"Subject: {subject}\n\nBody: {email_text}" if subject else email_text
+        user_prompt = f"""Analyze this email and extract structured features:
+            {full_text}
 
-        Return a JSON object with these fields:
+            Return a JSON object with these fields:
 
-        DATE AND TIME FIELDS (NEW - IMPORTANT):
-        - date_from: start date in YYYY-MM-DD format (e.g., "2025-11-15"), null if no date
-        - date_to: end date in YYYY-MM-DD format (same as date_from if single date), null if no date
-        - time_from: start time in HH:MM:SS 24-hour format (e.g., "13:00:00" for 1 PM), null if no time
-        - time_to: end time in HH:MM:SS 24-hour format (same as time_from if single time), null if no time
-        - has_complete_datetime: boolean - true ONLY if both date and time are present, false otherwise
+            DATE AND TIME FIELDS (NEW - IMPORTANT):
+            - date_from: start date in YYYY-MM-DD format (e.g., "2025-11-15"), null if no date
+            - date_to: end date in YYYY-MM-DD format (same as date_from if single date), null if no date
+            - time_from: start time in HH:MM:SS 24-hour format (e.g., "13:00:00" for 1 PM), null if no time
+            - time_to: end time in HH:MM:SS 24-hour format (same as time_from if single time), null if no time
+            - has_complete_datetime: boolean - true ONLY if both date and time are present, false otherwise
 
-        LEGACY DATE/TIME FIELDS:
-        - scheduled_datetime: ISO datetime string if specific date/time mentioned, null otherwise
-        - date_text: raw text containing date/time info, null if none
+            LEGACY DATE/TIME FIELDS:
+            - scheduled_datetime: ISO datetime string if specific date/time mentioned, null otherwise
+            - date_text: raw text containing date/time info, null if none
 
-        URGENCY:
-        - urgency_level: one of [low, medium, high, critical]
-        - urgency_score: float 0.0-1.0
-        - urgency_indicators: array of urgency phrases found
+            URGENCY:
+            - urgency_level: one of [low, medium, high, critical]
+            - urgency_score: float 0.0-1.0
+            - urgency_indicators: array of urgency phrases found
 
-        LOCATION:
-        - location: meeting location, address, or venue name, null if none
-        - meeting_url: virtual meeting URL (Zoom, Teams, etc.), null if none
-        - maps_url: Google Maps or other map service URL, null if none
-        - coordinates: geographic coordinates (latitude, longitude), null if none
-        - location_type: one of [physical, virtual, hybrid, none]
+            LOCATION:
+            - location: meeting location, address, or venue name, null if none
+            - meeting_url: virtual meeting URL (Zoom, Teams, etc.), null if none
+            - maps_url: Google Maps or other map service URL, null if none
+            - coordinates: geographic coordinates (latitude, longitude), null if none
+            - location_type: one of [physical, virtual, hybrid, none]
 
-        EVENT:
-        - event_type: one of [appointment, meeting, deadline, maintenance, payment, verification, notification, reminder, final, other]
-        - event_confidence: float 0.0-1.0
+            EVENT:
+            - event_type: one of [appointment, meeting, deadline, maintenance, payment, verification, notification, reminder, final, other]
+            - event_confidence: float 0.0-1.0
 
-        RECURRENCE:
-        - recurrence_pattern: one of [none, daily, weekly, monthly, yearly, custom]
-        - recurrence_text: raw recurrence text, null if none
+            RECURRENCE:
+            - recurrence_pattern: one of [none, daily, weekly, monthly, yearly, custom]
+            - recurrence_text: raw recurrence text, null if none
 
-        ACTION:
-        - action_required: one of [confirm, reply, pay, verify, click, download, complete, review, none]
-        - action_deadline: ISO datetime for action deadline, null if none
-        - action_confidence: float 0.0-1.0
-        - action_phrases: array of action-indicating phrases
+            ACTION:
+            - action_required: one of [confirm, reply, pay, verify, click, download, complete, review, none]
+            - action_deadline: ISO datetime for action deadline, null if none
+            - action_confidence: float 0.0-1.0
+            - action_phrases: array of action-indicating phrases
 
-        METADATA:
-        - contains_links: boolean
-        - contains_attachments: boolean
-        - financial_amount: string of any monetary amounts, null if none
+            METADATA:
+            - contains_links: boolean
+            - contains_attachments: boolean
+            - financial_amount: string of any monetary amounts, null if none
 
-        EXAMPLES OF TIME CONVERSION:
-        - "1 PM" or "13" → "13:00:00"
-        - "2:30 PM" → "14:30:00"
-        - "9 AM" → "09:00:00"
-        - "midnight" → "00:00:00"
-        - "noon" → "12:00:00"
+            EXAMPLES OF TIME CONVERSION:
+            - "1 PM" or "13" → "13:00:00"
+            - "2:30 PM" → "14:30:00"
+            - "9 AM" → "09:00:00"
+            - "midnight" → "00:00:00"
+            - "noon" → "12:00:00"
 
-        EXAMPLES OF DATE EXTRACTION:
-        - "Meeting on Nov 15, 2025" → date_from: "2025-11-15", date_to: "2025-11-15"
-        - "Conference from Dec 1-3" → date_from: "2025-12-01", date_to: "2025-12-03"
-        - "this week in 2021" → extract specific date if possible, otherwise null
+            EXAMPLES OF DATE EXTRACTION:
+            - "Meeting on Nov 15, 2025" → date_from: "2025-11-15", date_to: "2025-11-15"
+            - "Conference from Dec 1-3" → date_from: "2025-12-01", date_to: "2025-12-03"
+            - "this week in 2021" → extract specific date if possible, otherwise null
 
-        EXAMPLES OF has_complete_datetime:
-        - Has date "Nov 15" and time "2 PM" → has_complete_datetime: true
-        - Has only date "Nov 15" → has_complete_datetime: false
-        - Has only time "2 PM" → has_complete_datetime: false
-        - No date or time → has_complete_datetime: false"""
-
-    response = call_llm(SYSTEM_PROMPT, user_prompt)
-    return EmailFeatures(**json.loads(response))
+            EXAMPLES OF has_complete_datetime:
+            - Has date "Nov 15" and time "2 PM" → has_complete_datetime: true
+            - Has only date "Nov 15" → has_complete_datetime: false
+            - Has only time "2 PM" → has_complete_datetime: false
+            - No date or time → has_complete_datetime: false"""
+        
+        response = client.chat.completions.create(
+            model=OPENAI_MODEL_NAME,
+            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
+            response_format={
+                "type": "json_schema",
+                "json_schema": schema
+            }
+        )
+        email_features = EmailFeatures.model_validate_json(response.choices[0].message.content)
+        return email_features
+    except Exception as e:
+        raise ValueError(f"Failed to parse EmailFeatures from LLM response: {e}")
 
 def explain_email_categories(email_text: str, category: str = "") -> str:
     SYSTEM_PROMPT = (
@@ -463,10 +483,9 @@ async def create(req: EmailRequest):
 @app.post("/function_call")
 async def function_call(req: EmailRequest):
     try:
-        print(req)
         features = extract_email_features(req.body, req.subject or "")
-        response = function_calling(features)
-        return {"success": True, "data": response}
+        # response = function_calling(features)
+        return {"success": True, "features": features}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
