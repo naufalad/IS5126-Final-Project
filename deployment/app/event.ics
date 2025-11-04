@@ -2,11 +2,11 @@ BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//OpenAI Calendar Agent//
 BEGIN:VEVENT
-SUMMARY:The 27th STePS
+SUMMARY:The 27th STePS (SoC Term Project Showcase)
 DTSTART:20251104T160000Z
 DTEND:20251105T155959Z
-DTSTAMP:20251104T081517Z
-UID:1762244117.680065@llm-agent
+DTSTAMP:20251104T081929Z
+UID:1762244369.6013@llm-agent
 DESCRIPTION:Dear Students\,\n\nA gentle reminder to register for a Standar
  d Ticket to explore the innovative projects showcased by your peers and en
  joy a buffet dinner with friends and fellow students at this festive yet i
@@ -15,58 +15,17 @@ DESCRIPTION:Dear Students\,\n\nA gentle reminder to register for a Standar
  her schools\, or colleagues from your internship or company.\n\nWe’ve al
  ready received  ~300 registrations\, and Standard Ticket registration clos
  es tomorrow!\n\nRegister by 5 November to receive a Standard Ticket with B
- uffet Dinner — free of charge!\n\nPastedGraphic-1.png\n\nSTePS27_Invite.
- jpeg\nThanks & Best Regards\n---------------------------------------------
- ----\nBHOJAN Anand Dr.:: Associate Professor  :: School of Computing :: Na
- tional University of Singapore :: Computing 1\, 13 Computing Drive\, Singa
- pore 117417 :: 65-6516 7351(DID) :: 65-6779 1610 (Fax) :: dcsab@nus.edu.sg
- (E)\,  banand@comp.nus.edu.sg (E):: https://metaverse.comp.nus.edu.sg (W)\
- , www.comp.nus.edu.sg/~bhojan(W)  \n \nImportant: This email is confidenti
- al and may be privileged. If you are not the intended recipient\, please d
- elete it and notify us immediately\; you should not copy or use it for any
-  purpose\, nor disclose its contents to any other person. Thank you.\n\nOn
-  29 Oct 2025\, at 5:13 AM\, anand <banand@comp.nus.edu.sg> wrote:\n\nDea
- r Students\,\n \nWe'd like to invite you to the The 27th STePS (SoC Term P
- roject Showcase) held on 12-Nov-2025 [Physical Event]\, the largest develo
- per centric event of the school. \n\nRegistration opens today!  https://bi
- t.ly/steps27r \n \nSTePS has three goals:\nE3 :  Education through self-di
- rected peer-learning by facilitating an environment to freely think\, crea
- te\, criticise and reflect with strong support from educational institutes
- \, industry and government agencies\; Employment through modern flipped ca
- reer fair where students demonstrate their skills live to the talent acqui
- sition departments to assess\; and Entrepreneurship through collaboration 
- with Industry and Investors. \nFrom cool new Healthcare Innovations and Ga
- me  projects 🎮 to exciting AI/ML enterprise apps📱\, there’s lots t
- o see and and learn from peers. 😉Register now to view (and vote!) for y
- our favourite projects at https://uvents.nus.edu.sg/event/27th-steps.   \n
-  \n(NB:- Last date for registration of Standard Tickets with Buffet Dinner
- : 05 Nov 2025)\nYou can use your registration ID as voter TOKEN to Vote fo
- r the best projects.\n \nSTePS is a public event. All are welcome. Feel fr
- ee forward this mail\, invitation poster and registration link/QR code to 
- your friends/colleague/business partners.\n\nEvent Programme [Wednesday 12
- -Apr-2025]:\n📍 Venue: COM3-Level 1 MPH & Foyer\n\n12:00 PM – Setup & 
- Preparations (Exhibitors & Sponsors)\n\n1:00 PM – Project Presentations 
- & Demos Begin\n\n1:00 PM – Best Project & Best Open Source Project Votin
- g & Networking\n\nEngage with project teams for collaboration\, internship
- s\, jobs\, and entrepreneurship opportunities.\n\n1:00 PM – Industry Sem
- inars & Sponsor Networking\n\nVisit sponsor booths for job\, internship\, 
- and collaboration opportunities.\n\n5:30 PM – Buffet Dinner (Locations: 
- COM3-Level 1 Foyer)\n\n5:45 PM – Voting Closes\n\n6:00 PM – Closing Ce
- remony @ Multipurpose Hall\, COM3\n\nTalks by Industry & Alumni\n\nPrize P
- resentation (Voters have a chance to win prizes! If your first-choice proj
- ect wins in any track\, you could win an exciting reward!)\n\n8:00 PM – 
- End of STePS – Take the Post-Event Survey\n\nWe would like to thank all 
- our Industry sponsors and supporters for their continued support!\n\n<STeP
- S27_Invite.jpeg>\n\n<Voting27thSTePS.png><Registration27thSTePS.png>\n\nBe
- st Regards\n-------------------------------------------------\nBHOJAN Anan
- d Dr.:: Associate Professor  :: School of Computing :: National University
-  of Singapore :: Computing 1\, 13 Computing Drive\, Singapore 117417 :: 65
- -6516 7351(DID) :: 65-6779 1610 (Fax) :: dcsab@nus.edu.sg(E)\,  banand@com
- p.nus.edu.sg (E):: https://metaverse.comp.nus.edu.sg (W)\, www.comp.nus.ed
- u.sg/~bhojan(W)  \n  \nImportant: This email is confidential and may be pr
- ivileged. If you are not the intended recipient\, please delete it and not
- ify us immediately\; you should not copy or use it for any purpose\, nor d
- isclose its contents to any other person. Thank you.
+ uffet Dinner — free of charge!\n\nDear Students\,\n \nWe'd like to invit
+ e you to the The 27th STePS (SoC Term Project Showcase) held on 12-Nov-202
+ 5 [Physical Event]\, the largest developer centric event of the school. \n
+ \nRegistration opens today!  https://bit.ly/steps27r \n jects at https://u
+ vents.nus.edu.sg/event/27th-steps.   \n \n(NB:- Last date for registration
+  of Standard Tickets with Buffet Dinner: 05 Nov 2025)\nYou can use your re
+ gistration ID as voter TOKEN to Vote for the best projects.\n \nSTePS is a
+  public event. All are welcome. Feel free forward this mail\, invitation p
+ oster and registration link/QR code to your friends/colleague/business par
+ tners.\n\nEvent Programme [Wednesday 12-Apr-2025]:\n📍 Venue: COM3-Level
+  1 MPH & Foyer
 LOCATION:COM3-Level 1 MPH & Foyer
 END:VEVENT
 END:VCALENDAR
