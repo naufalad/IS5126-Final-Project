@@ -6,7 +6,7 @@ from openai import OpenAI
 
 
 st.set_page_config(page_title="App for Entering Verification", page_icon="✅", layout="wide")
-st.title("✅ App for Entering Verification")
+st.title("App for Entering Verification")
 st.caption("Enter your verification code")
 
 

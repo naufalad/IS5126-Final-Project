@@ -2,7 +2,7 @@ import streamlit as st
 
 st.set_page_config(page_title="Email Dashboard", page_icon="📊", layout="wide")
 
-st.title("📊 Email Dashboard")
+st.title("Email Dashboard")
 st.caption("Use the Pages in the left sidebar to navigate.")
 
 st.markdown(

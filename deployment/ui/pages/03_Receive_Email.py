@@ -10,7 +10,30 @@ from dotenv import load_dotenv
 
 st.set_page_config(page_title="Email Prediction and Extraction", page_icon="📥", layout="wide")
 st.title("Email Prediction and Extraction")
-st.caption("Select one email record, review details, then click 'Receive' to proceed.")
+st.caption("Show prepared email, or fill in. Predict category and extract features using backend API.")
+# --- DARK THEME ---
+st.markdown("""
+<style>Email Prediction & Extraction
+
+/* Background & fonts */
+.main { background-color: #121212; color: #FFFFFF; font-family: 'Inter', sans-serif; padding: 20px; }
+h1,h2,h3,h4,h5 { color:#FFFFFF; font-weight:600; }
+.stText, .stCaption, .stMarkdown { color: #B3B3B3 !important; }
+
+/* Sidebar */
+[data-testid="stSidebar"] { background-color: #000000; color:white; }
+
+/* Buttons */
+button[kind="primary"] { background-color:#1DB954 !important; color:white !important; border-radius:6px !important; border:none !important; }
+button[kind="primary"]:hover { background-color:#1ed760 !important; }
+
+/* Textareas & inputs */
+textarea, input, select { background-color: #1e1e1e !important; color: white !important; border-radius:6px !important; }
+
+/* Divider */
+hr { border: 1px solid #333; }
+</style>
+""", unsafe_allow_html=True)
 
 # Backend API configuration
 load_dotenv()  # Load .env file if it exists
@@ -34,30 +57,6 @@ def calendar_path():
     ui_dir = os.path.dirname(current_dir)  # .../ui
     return os.path.join(os.path.dirname(ui_dir), "data", "calendar", "events.json")
 
-
-def load_events():
-    path = calendar_path()
-    try:
-        if os.path.exists(path):
-            with open(path, "r", encoding="utf-8") as f:
-                return json.load(f)
-    except Exception:
-        pass
-    return []
-
-
-def save_events(events):
-    path = calendar_path()
-    try:
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(events, f, ensure_ascii=False, indent=2)
-        return True
-    except Exception as e:
-        st.error(f"Failed to save calendar: {e}")
-        return False
-
-
 def create_openai_client():
     api = os.getenv("OPENAI_API_KEY")
     if not api:
@@ -66,7 +65,6 @@ def create_openai_client():
         return OpenAI(api_key=api)
     except Exception:
         return None
-
 
 def call_function_call_api(email_data: dict) -> dict:
     """Call backend API /function_call endpoint to process email and create calendar event"""
@@ -127,10 +125,8 @@ with colA:
     model_choice = st.radio("Choose classification model:", [1, 2, 3], horizontal=True)
     if st.button("Predict Email Category", type="primary"):
         st.session_state['received_email_index'] = idx_display  # Store 1-based index
-        received_item = data[idx]
-        subject = received_item.get("subject", "")
-        body = received_item.get("body", "")
-        st.session_state['received_email_item'] = received_item
+        subject = st.session_state.get("subject_area", "")
+        body = st.session_state.get("body_area", "")
 
         # Prepare data for backend API
         email_payload = {
@@ -146,12 +142,10 @@ with colA:
             if api_response:
                 # Check if event was created
                 if api_response.get("status") == "success":
+                    st.success("Received email prediction")
                     created_event = api_response.get("event")
                     if created_event:
                         # Save to local calendar as well for UI display
-                        events = load_events()
-                        events.append(created_event)
-                        save_events(events)
                         st.success(f"Received email #{idx_display}")
                         st.info(f"Calendar event created: '{created_event.get('title', 'Untitled')}'")
                     else:
@@ -164,10 +158,8 @@ with colA:
                 st.error("Failed to process email via backend API")
     if st.button("Extract and Manage Email Features", type="primary"):
         st.session_state['received_email_index'] = idx_display  # Store 1-based index
-        received_item = data[idx]
-        subject = received_item.get("subject", "")
-        body = received_item.get("body", "")
-        st.session_state['received_email_item'] = received_item
+        subject = st.session_state.get("subject_area", "")
+        body = st.session_state.get("body_area", "")
         
         with st.spinner("Processing email..."):
             # Prepare data for backend API
@@ -180,35 +172,40 @@ with colA:
             api_response = call_function_call_api(email_payload)
             
             if api_response:
-                # Check if event was created
-                if api_response.get("status") == "success":
-                    created_event = api_response.get("event")
-                    if created_event:
-                        # Save to local calendar as well for UI display
-                        events = load_events()
-                        events.append(created_event)
-                        save_events(events)
-                        st.success(f"Received email #{idx_display}")
-                        st.info(f"Calendar event created: '{created_event.get('title', 'Untitled')}'")
+                # Check if event was managed
+                if api_response.get("success"):
+                    st.success("Received email features extraction")
+                    email_features = api_response.get("features")
+                    if email_features:
+                        st.success("Email extracted")
+                        if api_response.get("ics_file_path"):
+                            # ask whether the user want to download the ics file
+                            with open(api_response.get("ics_file_path"), "rb") as f:
+                                ics_data = f.read()
+                            st.download_button(
+                                label="Download ICS File",
+                                data=ics_data,
+                                file_name="event.ics",
+                                mime="text/calendar"
+                            )
                     else:
                         st.success(f"Received email #{idx_display}")
-                        st.info("No calendar event created (missing information)")
+                        st.info("No function call results (missing requirements)")
                 else:
                     st.info(api_response)
-                    st.warning(f"Email received but event creation failed: {api_response.get('message', 'Unknown error')}")
+                    st.warning(f"Email received but extraction failed: {api_response.get('message', 'Unknown error')}")
             else:
                 st.error("Failed to process email via backend API")
 
 with colB:
     st.subheader("Email Content")
     if(idx>4):
-        subject = ""
-        body = ""
+        subject = st.session_state.get("subject_area", "")
+        body = st.session_state.get("body_area", "")
     else:
         item = data[idx]
         subject = item.get("subject", "")
         body = item.get("body", "")
-        features = {k: v for k, v in item.items() if k != 'email_text'}
     
     st.markdown("**Subject:**")
     st.text_area("", subject, key="subject_area", height=100)
@@ -219,7 +216,7 @@ with colB:
 st.divider()
 st.subheader("Extracted Features")
 
-if 'features' in locals():
-    st.json(features)
+if 'email_features' in locals():
+    st.json(email_features)
 else:
     st.info("No features available for this record")

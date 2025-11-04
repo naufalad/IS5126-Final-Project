@@ -45,3 +45,7 @@ starlette>=0.27.0
 # Additional Streamlit Components (optional but useful)
 streamlit-calendar>=0.6.0
 streamlit-extras>=0.3.0
+
+spotipy>=2.27.0
+icalendar>=4.0.9
+dateparser>=1.1.8

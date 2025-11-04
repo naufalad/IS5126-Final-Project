@@ -15,6 +15,67 @@ from dotenv import load_dotenv
 st.set_page_config(page_title="Calendar", page_icon="🗓️", layout="wide")
 st.title("Calendar")
 st.caption("Visualize events on a calendar")
+# --- Spotify Theme CSS ---
+st.markdown("""
+<style>
+/* Background & general text */
+body, .stApp {
+    background-color: #121212;
+    color: #FFFFFF;
+}
+
+/* Calendar header */
+.calendar-header {
+    background-color: #1DB954;
+    color: #121212;
+    padding: 10px;
+    border-radius: 10px 10px 0 0;
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+
+/* Day cell */
+.calendar-day {
+    border: 1px solid #333333;
+    border-radius: 8px;
+    padding: 8px;
+    min-height: 100px;
+    transition: all 0.3s ease;
+}
+
+/* Hover effect */
+.calendar-day:hover {
+    box-shadow: 0 4px 12px rgba(29, 185, 84, 0.5);
+    transform: translateY(-2px);
+}
+
+/* Today highlight */
+.today-highlight {
+    background: linear-gradient(135deg, #1DB954 0%, #1ed760 100%);
+    border: 2px solid #1DB954;
+    box-shadow: 0 4px 12px rgba(29, 185, 84, 0.4);
+}
+
+/* Weekend day */
+.weekend-day {
+    background-color: #1e1e1e;
+}
+
+/* Event badge */
+.event-badge {
+    font-size: 0.65em;
+    padding: 3px 5px;
+    margin: 2px 0;
+    border-radius: 4px;
+    background-color: rgba(29, 185, 84, 0.2);
+    color: #1DB954;
+    display: block;
+    line-height: 1.4;
+}
+</style>
+""", unsafe_allow_html=True)
+
 
 # Backend API configuration
 load_dotenv()  # Load .env file if it exists
@@ -129,49 +190,6 @@ def render_calendar(events, year, month):
     }
     
     st.subheader(f"{month_name} {year}")
-    
-    # Create header row with styled background
-    st.markdown("""
-        <style>
-        .calendar-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 10px;
-            border-radius: 10px 10px 0 0;
-            text-align: center;
-            font-weight: bold;
-            margin-bottom: 2px;
-        }
-        .calendar-day {
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 8px;
-            min-height: 100px;
-            transition: all 0.3s ease;
-        }
-        .calendar-day:hover {
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            transform: translateY(-2px);
-        }
-        .today-highlight {
-            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
-            border: 2px solid #fdcb6e;
-            box-shadow: 0 4px 12px rgba(253, 203, 110, 0.4);
-        }
-        .weekend-day {
-            background-color: #f8f9fa;
-        }
-        .event-badge {
-            font-size: 0.65em;
-            padding: 2px 4px;
-            margin: 2px 0;
-            border-radius: 4px;
-            background-color: rgba(255, 255, 255, 0.9);
-            display: block;
-            line-height: 1.4;
-        }
-        </style>
-    """, unsafe_allow_html=True)
     
     # Create header row
     cols = st.columns(7)
