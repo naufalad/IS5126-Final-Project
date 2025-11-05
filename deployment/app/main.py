@@ -208,14 +208,13 @@ async def predict(req: PredictRequest):
         match req.model:
             case 1:
                 # BERT + Transformers
-                model_data = joblib.load(os.path.join(MODEL_DIRECTORY, 'chocka.joblib'))
-                # model = model_data["model"]
+                model_data = joblib.load('./models/chocka.joblib')
             case 2:
                 # MPNET + XGBoost
-                model_data = joblib.load(os.path.join(MODEL_DIRECTORY, 'habibi.joblib'))
+                model_data = joblib.load('./models/habibi.joblib')
             case 3:
                 # CNN
-                model_data = joblib.load(os.path.join(MODEL_DIRECTORY, 'source.joblib'))
+                model_data = joblib.load('./models/source.joblib')
             case _:
                 raise ValueError(f"Invalid model selection: {req.model}")
         
@@ -223,12 +222,12 @@ async def predict(req: PredictRequest):
         input_data = f"{req.subject} {req.body}" if req.subject else req.body
         
         # Make prediction
-        prediction, probabilities = model_data.predict([input_data])[0]
+        prediction, probabilities = model_data.predict(input_data)
         
         return {
             "success": True,
             "prediction": prediction,
-            "probabilities": probabilities.tolist(),
+            # "probabilities": probabilities.tolist(),
             "explanation": explain_email_categories(input_data, category=prediction),
             "model_used": req.model
         } 

@@ -11,7 +11,8 @@ st.markdown(
 - Data Browser
 - Data Analytics
 - Calendar
-- Receive Email
+- Email Management (user)
+- Email Management (developer)
 
 Tip: If pages do not appear, stop and re-run the app to reload the `pages/` directory.
 """

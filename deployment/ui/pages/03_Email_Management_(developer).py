@@ -122,7 +122,8 @@ colA, colB = st.columns([1, 3])
 with colA:
     idx_display = st.number_input("Email No.", min_value=0, max_value=len(data), value=0, step=1)
     idx = idx_display
-    model_choice = st.radio("Choose classification model:", [1, 2, 3], horizontal=True)
+    model_choice = st.radio("Choose classification model:", ['BERT', 'MPNET+XGBoost', 'CNN'], horizontal=True)
+    model_choice = ['BERT', 'MPNET+XGBoost', 'CNN'].index(model_choice) + 1
     if st.button("Predict Email Category", type="primary"):
         st.session_state['received_email_index'] = idx_display  # Store 1-based index
         subject = st.session_state.get("subject_area", "")
@@ -153,9 +154,11 @@ with colA:
                         st.info("No calendar event created (missing time or requirements)")
                 else:
                     st.info(api_response)
-                    st.warning(f"Email received but event creation failed: {api_response.get('message', 'Unknown error')}")
+                    st.warning(f"Email received but classification failed: {api_response.get('message', 'Unknown error')}")
             else:
                 st.error("Failed to process email via backend API")
+    model_choice = st.radio("Choose model agent:", ['Single Agent', 'Multi Agent'], horizontal=True)
+
     if st.button("Extract and Manage Email Features", type="primary"):
         st.session_state['received_email_index'] = idx_display
         subject = st.session_state.get("subject_area", "")
