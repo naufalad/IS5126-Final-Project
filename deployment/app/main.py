@@ -2,11 +2,13 @@ import os
 import sys
 import json
 from typing import Any, Dict, Optional, List
-
+from enum import Enum
+from datetime import datetime, date, time
 from fastapi import FastAPI, Query, HTTPException
 import joblib
 from pydantic import BaseModel as PBaseModel, Field, field_validator
 from dotenv import load_dotenv
+from openai import OpenAI
 
 # Add parent directory to path to import from deployment root
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
