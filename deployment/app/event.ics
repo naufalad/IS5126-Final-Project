@@ -1,0 +1,28 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//OpenAI Calendar Agent//
+BEGIN:VEVENT
+SUMMARY:The 27th STePS
+DTSTART:20251111T160000Z
+DTEND:20251112T155959Z
+DTSTAMP:20251105T105435Z
+UID:1762340075.103215@llm-agent
+DESCRIPTION:Dear Students\, \n We'd like to invite you to the The 27th STe
+ PS (SoC Term Project Showcase) held on 12-Nov-2025 [Physical Event]\, the 
+ largest developer centric event of the school. \n Registration opens today
+ !  https://bit.ly/steps27r \n\n STePS has three goals:\nE3 :  Education th
+ rough self-directed peer-learning by facilitating an environment to freely
+  think\, create\, criticise and reflect with strong support from education
+ al institutes\, industry and government agencies\; Employment through mode
+ rn flipped career fair where students demonstrate their skills live to the
+  talent acquisition departments to assess\; and Entrepreneurship through c
+ ollaboration with Industry and Investors.\nFrom cool new Healthcare Innova
+ tions and Game  projects 🎮 to exciting AI/ML enterprise apps📱\, ther
+ e’s lots to see and and learn from peers. 😉Register now to view (and 
+ vote!) for your favourite projects at https://uvents.nus.edu.sg/event/27th
+ -steps.   \n\n (NB:- Last date for registration of Standard Tickets with B
+ uffet Dinner: 05 Nov 2025) \nYou can use your registration ID as voter TOK
+ EN to Vote for the best projects.
+LOCATION:Physical Event
+END:VEVENT
+END:VCALENDAR

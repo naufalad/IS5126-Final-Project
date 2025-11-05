@@ -1,6 +1,7 @@
 [
   {
-    "email_text":"Subject: Anniversary Special: Buy one get one free\n\nBody: As our loyal customer, get exclusive $60 off $75+: example.com\/6058 Offer code: WELCOME20.",
+    "subject": "Anniversary Special: Buy one get one free",
+    "body": "As our loyal customer, get exclusive $60 off $75+: example.com\/6058 Offer code: WELCOME20.",
     "scheduled_datetime":null,
     "date_text":null,
     "date_from":null,
@@ -13,7 +14,7 @@
     "maps_url":null,
     "coordinates":null,
     "location_type":null,
-    "event_type":null,
+    "event_type":"promotions",
     "event_confidence":null,
     "urgency_level":null,
     "urgency_score":null,
@@ -33,7 +34,8 @@
     "financial_amount":null
   },
   {
-    "email_text":"Subject: Digital Ritual Experience Creation\n\nBody: Cross-cultural ceremony design. Join: virtualrituals.space Anthropological framework.",
+    "subject": "Digital Ritual Experience Creation",
+    "body": "Cross-cultural ceremony design. Join: virtualrituals.space Anthropological framework.",
     "scheduled_datetime":null,
     "date_text":null,
     "date_from":null,
@@ -66,7 +68,8 @@
     "financial_amount":null
   },
   {
-    "email_text":"Subject: Your post was moved to \"Programming Help\"\n\nBody: Trending: \"cooking\" (258 comments). View: support.site\/ticket\/456.",
+    "subject": "Your post was moved to \"Programming Help\"",
+    "body": "Trending: \"cooking\" (258 comments). View: support.site\/ticket\/456.",
     "scheduled_datetime":null,
     "date_text":null,
     "date_from":null,
@@ -99,7 +102,8 @@
     "financial_amount":null
   },
   {
-    "email_text":"Subject: Two-step verification code: 426706\n\nBody: For account verification, enter: 924578. Do not share this number.",
+    "subject": "Two-step verification code: 426706",
+    "body": "For account verification, enter: 924578. Do not share this number.",
     "scheduled_datetime":null,
     "date_text":null,
     "date_from":null,
@@ -133,7 +137,8 @@
     "financial_amount":null
   },
   {
-    "email_text":"Subject: Last chance: Warehouse clearance\n\nBody: Final hours of biggest sale. Up to 80% off: example.com\/3917 Ends {time}.",
+    "subject": "Last chance: Warehouse clearance",
+    "body": "Final hours of biggest sale. Up to 80% off: example.com\/3917 Ends {time}.",
     "scheduled_datetime":null,
     "date_text":null,
     "date_from":null,
@@ -146,7 +151,7 @@
     "maps_url":null,
     "coordinates":null,
     "location_type":"none",
-    "event_type":"final",
+    "event_type":"updates",
     "event_confidence":0.8,
     "urgency_level":"high",
     "urgency_score":0.9,

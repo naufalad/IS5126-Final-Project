@@ -20,4 +20,4 @@ $env:OPENAI_API_KEY="<YOUR_API_KEY>"
 uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 
 # Terminal 2 (frontend)
-streamlit run streamlit_app.py
+streamlit run Home.py
