@@ -1,3 +1,7 @@
 *.env
 /Model Training/.ipynb_checkpoints/
 /Model Training/results
+
+env/
+
+emb_cache/
