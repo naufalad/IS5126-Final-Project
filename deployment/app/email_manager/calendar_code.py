@@ -134,7 +134,7 @@ class CalendarFunction():
         with open(output_path, "wb") as f:
             f.write(cal.to_ical())
 
-        return output_path
+        return str(os.path.abspath(output_path))
 
     def save_calendar(self)  -> Dict[str, Any]:
         path = CALENDAR_PATH

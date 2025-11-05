@@ -136,7 +136,6 @@ def function_calling(email_features: EmailFeatures, email_text: str = "") -> Any
 
             # Execute the function
             result = function_call(function_name, **function_args)
-            
             if result is None:
                 print(f"❌ Function returned nothing")
                 return None
@@ -163,6 +162,7 @@ def function_calling(email_features: EmailFeatures, email_text: str = "") -> Any
                             print(f"📝 Description: {r.get('description')}")
             except Exception as e:
                 print(f"❌ Result structuring failed: {e}")
+            result['function_name'] = function_name
             results.append(result)
         return results
     else:
@@ -209,15 +209,13 @@ async def predict(req: PredictRequest):
             case 1:
                 # BERT + Transformers
                 model_data = joblib.load(os.path.join(MODEL_DIRECTORY, 'chocka.joblib'))
-                model = model_data["model"]
+                # model = model_data["model"]
             case 2:
                 # MPNET + XGBoost
                 model_data = joblib.load(os.path.join(MODEL_DIRECTORY, 'habibi.joblib'))
-                model = model_data["model"]
             case 3:
                 # CNN
                 model_data = joblib.load(os.path.join(MODEL_DIRECTORY, 'source.joblib'))
-                model = model_data["model"]
             case _:
                 raise ValueError(f"Invalid model selection: {req.model}")
         
@@ -225,8 +223,7 @@ async def predict(req: PredictRequest):
         input_data = f"{req.subject} {req.body}" if req.subject else req.body
         
         # Make prediction
-        prediction = model.predict([input_data])[0]
-        probabilities = model.predict_proba([input_data])[0]
+        prediction, probabilities = model_data.predict([input_data])[0]
         
         return {
             "success": True,
@@ -279,7 +276,6 @@ async def function_call_endpoint(req: EmailRequest):
         full_text = f"Subject: {req.subject}\n\nBody: {req.body}" if req.subject else req.body
         features = extract_email_features(full_text)
         response = function_calling(features, full_text)
-        
         return {
             "success": True,
             "features": features.model_dump(),

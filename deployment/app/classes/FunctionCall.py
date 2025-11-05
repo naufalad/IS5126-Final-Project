@@ -132,7 +132,6 @@ class FunctionCall():
             error_msg = f"Unknown function: {function}"
             print(f"❌ {error_msg}")
             return {"error": error_msg}
-        
         return result
 
 

@@ -44,7 +44,7 @@ def load_local_data():
     try:
         current_dir = os.path.dirname(os.path.abspath(__file__))  # .../ui/pages
         ui_dir = os.path.dirname(current_dir)  # .../ui
-        data_path = os.path.join(os.path.dirname(ui_dir), "data", "email_features.json")
+        data_path = os.path.join(os.path.dirname(ui_dir), "data", "email_cases.json")
         with open(data_path, "r", encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
@@ -157,7 +157,7 @@ with colA:
             else:
                 st.error("Failed to process email via backend API")
     if st.button("Extract and Manage Email Features", type="primary"):
-        st.session_state['received_email_index'] = idx_display  # Store 1-based index
+        st.session_state['received_email_index'] = idx_display
         subject = st.session_state.get("subject_area", "")
         body = st.session_state.get("body_area", "")
         
@@ -174,28 +174,47 @@ with colA:
             if api_response:
                 # Check if event was managed
                 if api_response.get("success"):
-                    st.success("Received email features extraction")
+                    st.success("✅ Email features extracted successfully")
+                    
                     email_features = api_response.get("features")
+                    function_result = api_response.get("function_result", [])
+                    
+                    # Display features
                     if email_features:
-                        st.success("Email extracted")
-                        if api_response.get("ics_file_path"):
-                            # ask whether the user want to download the ics file
-                            with open(api_response.get("ics_file_path"), "rb") as f:
-                                ics_data = f.read()
-                            st.download_button(
-                                label="Download ICS File",
-                                data=ics_data,
-                                file_name="event.ics",
-                                mime="text/calendar"
-                            )
+                        st.session_state['email_features'] = email_features
+                    
+                    # Display function results
+                    if function_result:
+                        st.info(f"📊 {len(function_result)} function(s) executed")
+                        if isinstance(function_result, dict) and "response" in function_result:
+                            st.markdown("**Function Responses:**")
+                            st.info(f"ℹ️ No functions were executed: {function_result.get('response')}")
+                        else:
+                            # Handle ICS file download if event created
+                            if function_result and function_result[0].get("function_name")=="create_event":
+                                ics_file_path = function_result[0].get("data", {}).get("ics_file_path")
+                                if ics_file_path:
+                                    st.success(f"📄 ICS file created: {ics_file_path}")
+                                    try:
+                                        with open(ics_file_path, "rb") as f:
+                                            ics_data = f.read()
+                                        st.download_button(
+                                            label="📥 Download ICS Calendar File",
+                                            data=ics_data,
+                                            file_name=ics_file_path,
+                                            mime="text/calendar",
+                                            type="primary"
+                                        )
+                                    except Exception as e:
+                                        st.error(f"Failed to download ICS file: {str(e)}")
+                                else:
+                                    st.info("ℹ️ No calendar file generated (no time-based event detected)")
                     else:
-                        st.success(f"Received email #{idx_display}")
-                        st.info("No function call results (missing requirements)")
+                        st.info("ℹ️ No functions were executed")
                 else:
-                    st.info(api_response)
-                    st.warning(f"Email received but extraction failed: {api_response.get('message', 'Unknown error')}")
+                    st.warning(f"⚠️ Email processing failed: {api_response.get('message', 'Unknown error')}")
             else:
-                st.error("Failed to process email via backend API")
+                st.error("❌ Failed to process email via backend API")
 
 with colB:
     st.subheader("Email Content")
@@ -216,7 +235,7 @@ with colB:
 st.divider()
 st.subheader("Extracted Features")
 
-if 'email_features' in locals():
-    st.json(email_features)
+if 'email_features' in st.session_state:
+    st.json(st.session_state['email_features'])
 else:
-    st.info("No features available for this record")
+    st.info("No features extracted yet. Click 'Extract and Manage Email Features' to process an email.")

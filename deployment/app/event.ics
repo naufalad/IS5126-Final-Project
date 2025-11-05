@@ -2,30 +2,27 @@ BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//OpenAI Calendar Agent//
 BEGIN:VEVENT
-SUMMARY:The 27th STePS (SoC Term Project Showcase)
+SUMMARY:The 27th STePS
 DTSTART:20251104T160000Z
 DTEND:20251105T155959Z
-DTSTAMP:20251104T081929Z
-UID:1762244369.6013@llm-agent
-DESCRIPTION:Dear Students\,\n\nA gentle reminder to register for a Standar
- d Ticket to explore the innovative projects showcased by your peers and en
- joy a buffet dinner with friends and fellow students at this festive yet i
- ntellectually engaging technology event.\n\nSTePS is a public event\, so f
- eel free to share the registration link with your family\, friends from ot
- her schools\, or colleagues from your internship or company.\n\nWe’ve al
- ready received  ~300 registrations\, and Standard Ticket registration clos
- es tomorrow!\n\nRegister by 5 November to receive a Standard Ticket with B
- uffet Dinner — free of charge!\n\nDear Students\,\n \nWe'd like to invit
- e you to the The 27th STePS (SoC Term Project Showcase) held on 12-Nov-202
- 5 [Physical Event]\, the largest developer centric event of the school. \n
- \nRegistration opens today!  https://bit.ly/steps27r \n jects at https://u
- vents.nus.edu.sg/event/27th-steps.   \n \n(NB:- Last date for registration
-  of Standard Tickets with Buffet Dinner: 05 Nov 2025)\nYou can use your re
- gistration ID as voter TOKEN to Vote for the best projects.\n \nSTePS is a
-  public event. All are welcome. Feel free forward this mail\, invitation p
- oster and registration link/QR code to your friends/colleague/business par
- tners.\n\nEvent Programme [Wednesday 12-Apr-2025]:\n📍 Venue: COM3-Level
-  1 MPH & Foyer
-LOCATION:COM3-Level 1 MPH & Foyer
+DTSTAMP:20251105T083653Z
+UID:1762331813.93251@llm-agent
+DESCRIPTION:Dear Students\, \n We'd like to invite you to the The 27th STe
+ PS (SoC Term Project Showcase) held on 12-Nov-2025 [Physical Event]\, the 
+ largest developer centric event of the school. \n\n Registration opens tod
+ ay!  https://bit.ly/steps27r \n\n STePS has three goals:\nE3 :  Education 
+ through self-directed peer-learning by facilitating an environment to free
+ ly think\, create\, criticise and reflect with strong support from educati
+ onal institutes\, industry and government agencies\; Employment through mo
+ dern flipped career fair where students demonstrate their skills live to t
+ he talent acquisition departments to assess\; and Entrepreneurship through
+  collaboration with Industry and Investors.\nFrom cool new Healthcare Inno
+ vations and Game  projects 🎮 to exciting AI/ML enterprise apps📱\, th
+ ere’s lots to see and and learn from peers. 😉Register now to view (an
+ d vote!) for your favourite projects at https://uvents.nus.edu.sg/event/27
+ th-steps.   \n\n(NB:- Last date for registration of Standard Tickets with 
+ Buffet Dinner: 05 Nov 2025) \nYou can use your registration ID as voter TO
+ KEN to Vote for the best projects.
+LOCATION:The 27th STePS (SoC Term Project Showcase)
 END:VEVENT
 END:VCALENDAR

@@ -46,6 +46,7 @@ Available functions:
 IMPORTANT: 
 - You can call MULTIPLE functions if the email contains information relevant to multiple categories
 - For example, if an email is about a concert, you might call BOTH create_event AND spotify_link_discovery
+- The order of the function calls explains the priority of function to be called first
 - Prefer using data from the extracted email features to decide which functions to call instead of relying solely on email text
 - Only call functions when the email CLEARLY fits the category
 - If no functions apply, explain why"""
