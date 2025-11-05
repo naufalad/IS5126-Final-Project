@@ -129,7 +129,7 @@ event_types = list({
     (i.get("event_type") if i.get("event_type") is not None else "unknown")
     for i in local_data
 })
-event_types = sorted(event_types)  # urutkan A-Z
+event_types = sorted(event_types)  # sort A-Z
 
 event_filter = st.sidebar.selectbox(
     "Category: Event Type",
