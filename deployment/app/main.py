@@ -210,13 +210,13 @@ async def predict(req: PredictRequest):
         match req.model:
             case 1:
                 # BERT + Transformers
-                model_data = joblib.load('./models/chocka.joblib')
+                model_data = joblib.load('./models/bert.joblib')
             case 2:
                 # MPNET + XGBoost
-                model_data = joblib.load('./models/habibi.joblib')
+                model_data = joblib.load('./models/rf_mpnet_model.joblib')
             case 3:
                 # CNN
-                model_data = joblib.load('./models/source.joblib')
+                model_data = joblib.load('./models/xgb_mpnet_model.joblib')
             case _:
                 raise ValueError(f"Invalid model selection: {req.model}")
         

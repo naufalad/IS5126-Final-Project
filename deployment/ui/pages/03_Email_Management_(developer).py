@@ -145,8 +145,8 @@ colA, colB = st.columns([1, 3])
 with colA:
     idx_display = st.number_input("Email No.", min_value=0, max_value=len(data), value=0, step=1)
     idx = idx_display
-    model_choice = st.radio("Choose classification model:", ['BERT', 'MPNET+XGBoost', 'Random Forest'], horizontal=True)
-    model_choice = ['BERT', 'MPNET+XGBoost', 'Random Forest'].index(model_choice) + 1
+    model_choice = st.radio("Choose classification model:", ['BERT', 'XGBoost', 'RF'], horizontal=True)
+    model_choice = ['BERT', 'XGBoost', 'RF'].index(model_choice) + 1
     if st.button("Predict Email Category", type="primary"):
         st.session_state['received_email_index'] = idx_display  # Store 1-based index
         subject = st.session_state.get("subject_area", "")
