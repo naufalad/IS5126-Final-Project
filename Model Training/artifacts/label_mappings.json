@@ -1,0 +1,22 @@
+{
+  "label2id": {
+    "promotions": 1,
+    "spam": 3,
+    "social_media": 2,
+    "forum": 0,
+    "verify_code": 5,
+    "updates": 4,
+    "flight_booking": 7,
+    "concert_promotion": 6
+  },
+  "id2label": {
+    "1": "promotions",
+    "3": "spam",
+    "2": "social_media",
+    "0": "forum",
+    "5": "verify_code",
+    "4": "updates",
+    "7": "flight_booking",
+    "6": "concert_promotion"
+  }
+}

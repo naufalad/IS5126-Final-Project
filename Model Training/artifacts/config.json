@@ -1,0 +1,46 @@
+{
+  "architectures": [
+    "BertForSequenceClassification"
+  ],
+  "attention_probs_dropout_prob": 0.1,
+  "classifier_dropout": null,
+  "dtype": "float32",
+  "gradient_checkpointing": false,
+  "hidden_act": "gelu",
+  "hidden_dropout_prob": 0.1,
+  "hidden_size": 768,
+  "id2label": {
+    "0": "forum",
+    "1": "promotions",
+    "2": "social_media",
+    "3": "spam",
+    "4": "updates",
+    "5": "verify_code",
+    "6": "concert_promotion",
+    "7": "flight_booking"
+  },
+  "initializer_range": 0.02,
+  "intermediate_size": 3072,
+  "label2id": {
+    "concert_promotion": 6,
+    "flight_booking": 7,
+    "forum": 0,
+    "promotions": 1,
+    "social_media": 2,
+    "spam": 3,
+    "updates": 4,
+    "verify_code": 5
+  },
+  "layer_norm_eps": 1e-12,
+  "max_position_embeddings": 512,
+  "model_type": "bert",
+  "num_attention_heads": 12,
+  "num_hidden_layers": 12,
+  "pad_token_id": 0,
+  "position_embedding_type": "absolute",
+  "problem_type": "single_label_classification",
+  "transformers_version": "4.57.1",
+  "type_vocab_size": 2,
+  "use_cache": true,
+  "vocab_size": 30522
+}
