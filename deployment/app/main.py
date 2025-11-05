@@ -152,16 +152,28 @@ def function_calling(email_features: EmailFeatures, email_text: str = "") -> Any
                         event = result.get("data", {}).get("event", {})
                         print(f"✅ Event Created: {event.get('title')} on {event.get('start')}")
                     case "spotify_link_discovery":
-                        for r in result.get("data", []).get('songs', []):
-                            print(f"🎵 Song Name: {r.get('song')}")
-                            print(f"👤 Artist: {r.get('artist')}")
-                            print(f"🔗 Spotify Link: {r.get('spotify_url')}")
+                        if isinstance(result, (list, tuple)) and result:
+                            print(f"🎵 Found {len(result)} Song(s):")
+                            result = {"songs": result}
+                            for r in result["songs"]:
+                                print(f"🎵 Song Name: {r.get('name')}")
+                                print(f"👤 Artist: {r.get('artist')}")
+                                print(f"🗓️ Release Date: {r.get('release_date')}")
+                                print(f"💽 Album: {r.get('album')}")
+                                print(f"🔗 Spotify Link: {r.get('spotify_url')}")
+                        else:
+                            print(f"🎵 Song Name: {result.get('name')}")
+                            print(f"👤 Artist: {result.get('artist')}")
+                            print(f"🗓️ Release Date: {result.get('release_date')}")
+                            print(f"💽 Album: {result.get('album')}")
+                            print(f"🔗 Spotify Link: {result.get('spotify_url')}")
                     case "attraction_discovery":
-                        for r in result.get("data", []).get('attractions', []):
+                        result = {"attractions": result}
+                        for r in result["attractions"]:
                             print(f"🎭 Attraction Name: {r.get('name')}")
-                            print(f"📍 Location: {r.get('location')}")
-                            print(f"🏷 Type: {r.get('type')}")
+                            print(f"📍 Map Link: {r.get('map_link')}")
                             print(f"📝 Description: {r.get('description')}")
+                            print(f"🤩 Fun Fact: {r.get('fun_fact')}")
             except Exception as e:
                 print(f"❌ Result structuring failed: {e}")
             result['function_name'] = function_name

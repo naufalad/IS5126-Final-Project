@@ -1,7 +1,94 @@
+# Environment & virtualenvs
 *.env
+.env.*
+.env.local
+.env.*.local
+.envrc
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+
+# Python caches / build artifacts (expanded)
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+.Python
+.cache/
+pip-delete-this-directory.txt
+pip-log.txt
+.hypothesis/
+.pytest_cache/
+.mypy_cache/
+.pyright/
+.ipynb_checkpoints/
+# keep existing wheel/packaging caches
+pip-wheel-metadata/
+wheelhouse/
+
+# Model files / large binaries
+/models/
+*.joblib
+*.h5
+*.pt
+*.ckpt
+
+# Notebook checkpoints & outputs
 /Model Training/.ipynb_checkpoints/
 /Model Training/results
+.ipynb_checkpoints/
 
-env/
-
+# Streamlit and runtime data
+.streamlit/
+data/calendar/events.json
 emb_cache/
+embeddings/
+logs/
+*.log
+
+# Test / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Type checkers / caches
+.mypy_cache/
+.pyright/
+.cache/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+.AppleDouble
+.LSOverride
+
+# Databases
+*.sqlite3
+*.db
+
+# Node / frontend
+node_modules/
+
+# Secrets / keys
+*.pem
+*.key
+*.der
+*.p12
+.aws/credentials
+credentials.json
+
+# Misc
+coverage/
