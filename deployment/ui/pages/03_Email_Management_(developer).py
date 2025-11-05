@@ -237,6 +237,35 @@ with colA:
                                         st.error(f"Failed to download ICS file: {str(e)}")
                                 else:
                                     st.info("ℹ️ No calendar file generated (no time-based event detected)")
+                            # Showcase detailed function results
+                            st.subheader("Function Result Details")
+                            for idx_f, fr in enumerate(function_result):
+                                fn = fr.get("function_name", f"function_{idx_f+1}")
+                                st.markdown(f"**{idx_f+1}. {fn}**")
+
+                                if fn=="spotify_link_discovery":
+                                    songs = fr.get("songs", [])
+                                    if songs:
+                                        for s_idx, song in enumerate(songs):
+                                            st.markdown(f"**Song {s_idx+1}: {song.get('name', 'N/A')}**")
+                                            st.info(f"👤 Artist: {song.get('artist', 'N/A')}")
+                                            st.info(f"🗓️ Release Date: {song.get('release_date', 'N/A')}")
+                                            st.info(f"💽 Album: {song.get('album', 'N/A')}")
+                                            st.info(f"🔗 Spotify Link: {song.get('spotify_url', 'N/A')}")
+                                    else:
+                                        st.markdown(f"**Track: {fr.get('name', 'N/A')}**")
+                                        st.info(f"👤 Artist: {fr.get('artist', 'N/A')}")
+                                        st.info(f"🗓️ Release Date: {fr.get('release_date', 'N/A')}")
+                                        st.info(f"💽 Album: {fr.get('album', 'N/A')}")
+                                        st.info(f"🔗 Spotify Link: {fr.get('spotify_url', 'N/A')}")
+                                elif fn=="attraction_discovery":
+                                    attractions = fr.get("attractions", [])
+                                    if attractions:
+                                        for a_idx, attraction in enumerate(attractions):
+                                            st.markdown(f"**Attraction {a_idx+1}: {attraction.get('name', 'N/A')}**")
+                                            st.info(f"📝 Description: {attraction.get('description', 'N/A')}")
+                                            st.info(f"🌐 Maps Link: {attraction.get('map_link', 'N/A')}")
+                                            st.info(f"🤩 Fun Fact: {attraction.get('fun_fact', 'N/A')}")
                     else:
                         st.info("ℹ️ No functions were executed")
                 else:

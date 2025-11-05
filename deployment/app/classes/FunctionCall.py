@@ -72,49 +72,48 @@ class FunctionCall():
                 "message": error_msg,
                 "success": False
             }
-    def spotify_link_discovery(self, artist: str = None, song: str = None) -> List[Dict[str, Any]]:
+    def spotify_link_discovery(self) -> List[Dict[str, Any]]:
         """Discover Spotify links based on email features."""
         # TODO: Implement Spotify API integration
         print("🎵 Spotify link discovery called")
         
-        # Placeholder implementation
-        return {
-            "message": "Spotify songs discovered successfully",
-            "success": True,
-            "data": {
-                "songs": [
-                    {
-                        "song": song or "Unknown Song",
-                        "artist": artist or "Unknown Artist",
-                        "spotify_url": "https://open.spotify.com/track/example"
-                    }
-                ]
-            }
-        }
+        parsed_input = spotify.parse_song_input(self.email_text)
+        artist = artist or parsed_input.get("artist")
+        song = song or parsed_input.get("title")
+        print(f"🔍 Searching for Artist: {artist}, Song: {song}")
+
+        # Call Spotify API to search for the song
+        if song:
+            track = spotify.search_spotify_song(song, artist)
+            if track:
+                # Add descriptions
+                track["artist_description"] = spotify.get_artist_description(track["artist_id"])
+                track["song_description"] = spotify.get_song_description(track["name"], track["artist"])
+
+                print("\n✅ Track info with descriptions:")
+                return track
+            else:
+                print("⚠️ Track not found on Spotify.")
+        else:
+            print(f"\nℹ️ No song specified. Showing latest songs by {artist}:")
+            latest = spotify.latest_songs_by_artist(artist, limit=5)
+            return latest
     
-    def attraction_discovery(self, location: str = None, attraction_type: str = None) -> List[Dict[str, Any]]:
+    def attraction_discovery(self) -> List[Dict[str, Any]]:
         """Discover attractions based on email features."""
-        # TODO: Implement attraction discovery API
         print("🎭 Attraction discovery called")
         
         # Use location from email features if not provided
-        location = location or self.email_features.location or "Unknown Location"
-        
-        # Placeholder implementation
-        return {
-            "message": "Attractions discovered successfully",
-            "success": True,
-            "data": {
-                "attractions": [
-                    {
-                            "name": f"Sample Attraction in {location}",
-                            "location": location,
-                            "type": attraction_type or "general",
-                            "description": "Placeholder attraction description"
-                        }
-                    ]
-                }
-            }
+        location = flights.parse_destination_input(self.email_text)
+        print(f"🔍 Searching for attractions in Location: {location}")
+        # Call Flights API to search for attractions
+        attractions = flights.get_attractions_with_maps(location)
+        if attractions:
+            print("\n✅ Attractions found:")
+            return attractions
+        else:
+            print("⚠️ No attractions found.")
+            return []
     
     def function_call(self, function: str, **kwargs) -> Any:
         """Wrapper function for calling specific functions."""
@@ -159,16 +158,7 @@ spotify_link_schema = {
         "description": "Discover Spotify links for songs or artists mentioned in the email. Use this when the email mentions music, concerts, or artists.",
         "parameters": {
             "type": "object",
-            "properties": {
-                "artist": {
-                    "type": "string",
-                    "description": "Name of the artist or band"
-                },
-                "song": {
-                    "type": "string",
-                    "description": "Name of the song or track"
-                }
-            },
+            "properties": {},
             "required": []
         }
     }
@@ -181,18 +171,8 @@ attraction_discovery_schema = {
         "description": "Discover attractions, venues, or points of interest based on location mentioned in the email. Use this when the email mentions travel, tourism, or local attractions.",
         "parameters": {
             "type": "object",
-            "properties": {
-                "location": {
-                    "type": "string",
-                    "description": "Location name (city, region, or address)"
-                },
-                "attraction_type": {
-                    "type": "string",
-                    "description": "Type of attraction (museum, park, restaurant, etc.)",
-                    "enum": ["museum", "park", "restaurant", "theater", "landmark", "general"]
-                }
-            },
-            "required": ["location"]
+            "properties": {},
+            "required": []
         }
     }
 }
