@@ -5,12 +5,16 @@ import pytz
 import dateparser
 from icalendar import Calendar, Event, vText
 from openai import OpenAI
-import sys
+from crewai import Agent, Task, Crew, LLM
 import json
-from datetime import datetime, date, time
+from datetime import datetime
+import time
 from dotenv import load_dotenv
 from typing import Dict, Any
+OPENAI_MODEL_NAME = "gpt-4o-mini"
+from crewai import Agent, Task, Crew, LLM
 
+from classes.EmailFeatures import EmailFeatures
 # Load environment variables
 load_dotenv()
 
@@ -24,6 +28,12 @@ if not api_key:
     raise EnvironmentError("❌ OPENAI_API_KEY not found in temp.env or environment variables.")
 
 client = OpenAI(api_key=api_key)
+
+crewai_llm = LLM(
+    model=f"openai/{OPENAI_MODEL_NAME}",
+    temperature=0.1,
+    max_tokens=1500
+)
 
 DEFAULT_TZ = "UTC"
 
@@ -186,3 +196,167 @@ class CalendarFunction():
         }
         
         return label_mapping.get(event_type, "other")
+
+
+# ============================================================================
+# AGENT DEFINITIONS
+# ============================================================================
+
+classifier_agent = Agent(
+    role="Email Classifier",
+    goal="Decide if email should be added to the calendar",
+    backstory="Expert at identifying calendar-worthy events.",
+    verbose=False,
+    allow_delegation=False,
+    llm=crewai_llm,
+)
+
+scheduler_agent = Agent(
+    role="DateTime Specialist",
+    goal="Validate datetime information for events",
+    backstory="Expert at handling date/time logic.",
+    verbose=False,
+    allow_delegation=False,
+    llm=crewai_llm,
+)
+
+formatter_agent = Agent(
+    role="Event Formatter",
+    goal="Create properly formatted calendar event JSON",
+    backstory="Expert at building structured calendar entries.",
+    verbose=False,
+    allow_delegation=False,
+    llm=crewai_llm,
+)
+
+
+# ============================================================================
+# TASK DEFINITIONS
+# ============================================================================
+
+def create_classification_task(email_features: EmailFeatures) -> Task:
+    category = email_features.category
+    date_from = email_features.date_from
+
+    return Task(
+        description=f"""
+        Classify email: category={category}, date={date_from}
+
+        If date exists AND (category is concert_promotion OR flight_booking OR event_type is appointment/meeting/deadline):
+            Return: {{"should_add": true, "reasoning": "Has valid date", "priority": "high", "confidence": 0.9}}
+        Else:
+            Return: {{"should_add": false, "reasoning": "Not calendar-worthy", "priority": "low", "confidence": 0.9}}
+        """,
+        agent=classifier_agent,
+        expected_output="JSON with should_add boolean"
+    )
+
+
+def create_scheduling_task(email_features: EmailFeatures) -> Task:
+    date_from = email_features.date_from
+    return Task(
+        description=f"""
+        Set scheduling for event: date={date_from}
+        Return exactly:
+        {{"date_from": "{date_from}", "date_to": "{date_from}", "time_from": "19:00:00", "time_to": "22:00:00", "all_day": true}}
+        """,
+        agent=scheduler_agent,
+        expected_output="JSON with date/time fields"
+    )
+
+
+def create_formatting_task(email_features: EmailFeatures) -> Task:
+    text = email_features.email_text[:100]
+    location = email_features.location
+    return Task(
+        description=f"""
+        Create title from: {text} at {location}
+        Return exactly:
+        {{"calendar_title": "Event at Location", "calendar_description": "Description",
+          "calendar_color": "#9370DB", "calendar_reminder_minutes": 1440}}
+        """,
+        agent=formatter_agent,
+        expected_output="JSON with 4 fields"
+    )
+
+# ============================================================================
+# CROSS-PLATFORM TIMEOUT-SAFE PROCESSOR
+# ============================================================================
+
+class TimeoutException(Exception):
+    pass
+
+
+def process_email_to_calendar(email_features: EmailFeatures, timeout_seconds: int = 30) -> dict:
+    """Processes an email through three CrewAI agents with soft timeout."""
+    def check_timeout():
+        start_time = time.time()
+        if time.time() - start_time > timeout_seconds:
+            raise TimeoutException(f"Processing timed out after {timeout_seconds}s")
+
+    try:
+        # Task 1 — Classification
+        check_timeout()
+        classification_task = create_classification_task(email_features)
+        classification_result_raw = Crew(agents=[classifier_agent], tasks=[classification_task], verbose=False).kickoff()
+        result_str = str(classification_result_raw)
+        if "```json" in result_str:
+            result_str = result_str.split("```json")[1].split("```")[0].strip()
+        classification_result = json.loads(result_str)
+
+        if not classification_result.get("should_add", False):
+            return {
+                "calendar_event": None,
+                "decision": classification_result,
+                "processed": True,
+                "skipped": True
+            }
+
+        # Task 2 — Scheduling
+        check_timeout()
+        scheduling_task = create_scheduling_task(email_features)
+        scheduling_result_raw = Crew(agents=[scheduler_agent], tasks=[scheduling_task], verbose=False).kickoff()
+        result_str = str(scheduling_result_raw)
+        if "```json" in result_str:
+            result_str = result_str.split("```json")[1].split("```")[0].strip()
+        scheduling_result = json.loads(result_str)
+
+        # Task 3 — Formatting
+        check_timeout()
+        formatting_task = create_formatting_task(email_features)
+        formatting_result_raw = Crew(agents=[formatter_agent], tasks=[formatting_task], verbose=False).kickoff()
+        result_str = str(formatting_result_raw)
+        if "```json" in result_str:
+            result_str = result_str.split("```json")[1].split("```")[0].strip()
+        calendar_fields = json.loads(result_str)
+
+        # Merge
+        calendar_event = {
+            **email_features,
+            **scheduling_result,
+            **calendar_fields
+        }
+        return {
+            "calendar_event": calendar_event,
+            "decision": classification_result,
+            "scheduling": scheduling_result,
+            "processed": True,
+            "skipped": False
+        }
+
+    except TimeoutException as e:
+        print(str(e))
+        return {
+            "calendar_event": None,
+            "decision": {"should_add": False, "reasoning": str(e)},
+            "processed": False,
+            "skipped": True
+        }
+    except Exception as e:
+        print(f"ERROR: {e}")
+        return {
+            "calendar_event": None,
+            "decision": {"should_add": False, "reasoning": str(e)},
+            "processed": False,
+            "skipped": True
+        }

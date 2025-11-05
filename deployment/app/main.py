@@ -1,12 +1,13 @@
 import os
 import sys
 import json
-from typing import Any, Dict, Optional, List
+from typing import Any, Optional
 
 from fastapi import FastAPI, Query, HTTPException
 import joblib
-from pydantic import BaseModel as PBaseModel, Field, field_validator
+from pydantic import BaseModel as PBaseModel, Field
 from dotenv import load_dotenv
+from email_manager.calendar_code import process_email_to_calendar
 
 # Add parent directory to path to import from deployment root
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -52,6 +53,7 @@ CALENDAR_PATH = os.path.join(_DEV_DIR, "data", "calendar", "events.json")
 class EmailRequest(PBaseModel):
     subject: Optional[str] = None
     body: str
+    category: Optional[str] = None
 
 class PredictRequest(EmailRequest):
     model: int = Field(..., ge=1, le=3, description="Model selection: 1=BERT, 2=MPNET+XGBoost, 3=CNN")
@@ -255,7 +257,8 @@ async def create(req: EmailRequest):
     try:
         full_text = f"Subject: {req.subject}\n\nBody: {req.body}"
         features = extract_email_features(full_text)
-        response = function_calling(features, full_text)
+        features.category = req.category
+        response = process_email_to_calendar(features)
         
         if response is None:
             raise HTTPException(status_code=400, detail="Failed to create event from email")

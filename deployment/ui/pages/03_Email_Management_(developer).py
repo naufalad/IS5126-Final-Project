@@ -89,6 +89,29 @@ def call_function_call_api(email_data: dict) -> dict:
         st.error(f"Failed to call API: {str(e)}")
         return None
 
+def call_multi_agent_api(email_data: dict) -> dict:
+    """Call backend API /create endpoint to process email and create calendar event"""
+    try:
+        response = requests.post(
+            f"{BACKEND_URL}/create",
+            json=email_data,
+            timeout=30  # Longer timeout for LLM processing
+        )
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.ConnectionError:
+        st.error("Cannot connect to backend server. Please ensure the backend is running on port 8000.")
+        return None
+    except requests.exceptions.Timeout:
+        st.error("Request timed out. The backend may be processing - please try again.")
+        return None
+    except requests.exceptions.HTTPError as e:
+        st.error(f"HTTP Error: {e.response.status_code} - {e.response.text}")
+        return None
+    except Exception as e:
+        st.error(f"Failed to call API: {str(e)}")
+        return None
+
 def call_predict_api(email_data: dict) -> dict:
     """Call backend API /predict endpoint to process email and create calendar event"""
     try:
@@ -122,8 +145,8 @@ colA, colB = st.columns([1, 3])
 with colA:
     idx_display = st.number_input("Email No.", min_value=0, max_value=len(data), value=0, step=1)
     idx = idx_display
-    model_choice = st.radio("Choose classification model:", ['BERT', 'MPNET+XGBoost', 'CNN'], horizontal=True)
-    model_choice = ['BERT', 'MPNET+XGBoost', 'CNN'].index(model_choice) + 1
+    model_choice = st.radio("Choose classification model:", ['BERT', 'MPNET+XGBoost', 'Random Forest'], horizontal=True)
+    model_choice = ['BERT', 'MPNET+XGBoost', 'Random Forest'].index(model_choice) + 1
     if st.button("Predict Email Category", type="primary"):
         st.session_state['received_email_index'] = idx_display  # Store 1-based index
         subject = st.session_state.get("subject_area", "")
@@ -141,23 +164,21 @@ with colA:
             api_response = call_predict_api(email_payload)
             
             if api_response:
-                # Check if event was created
-                if api_response.get("status") == "success":
+                if api_response.get("success"):
                     st.success("Received email prediction")
-                    created_event = api_response.get("event")
-                    if created_event:
-                        # Save to local calendar as well for UI display
-                        st.success(f"Received email #{idx_display}")
-                        st.info(f"Calendar event created: '{created_event.get('title', 'Untitled')}'")
-                    else:
-                        st.success(f"Received email #{idx_display}")
-                        st.info("No calendar event created (missing time or requirements)")
+                    category = api_response.get("prediction")[0]
+                    st.info(f"📧 Predicted Category: **{category}**")
+                    st.session_state['predicted_category'] = category
+                    explanation = api_response.get("explanation", "No explanation provided")
+                    st.markdown("**Explanation:**")
+                    st.info(explanation)
                 else:
-                    st.info(api_response)
                     st.warning(f"Email received but classification failed: {api_response.get('message', 'Unknown error')}")
             else:
                 st.error("Failed to process email via backend API")
     model_choice = st.radio("Choose model agent:", ['Single Agent', 'Multi Agent'], horizontal=True)
+    st.info("ℹ️ Single Agent uses one LLM agent to extract features and create calendar event. It uses function calling to extract features then whether create the event, show spotify links, or give tourist attractions.")
+    st.info("ℹ️ Multi Agent uses multiple specialized agents for better accuracy, but only capable on creating event calendar for now.")
 
     if st.button("Extract and Manage Email Features", type="primary"):
         st.session_state['received_email_index'] = idx_display
@@ -169,11 +190,15 @@ with colA:
             email_payload = {
                 "subject": subject,
                 "body": body,
+                "category": st.session_state.get('predicted_category', 'general')
             }
             
             # Call backend API
-            api_response = call_function_call_api(email_payload)
-            
+            if(model_choice == 'Single Agent'):
+                api_response = call_function_call_api(email_payload)
+            else:
+                api_response = call_multi_agent_api(email_payload)
+                st.info(api_response)
             if api_response:
                 # Check if event was managed
                 if api_response.get("success"):
@@ -187,7 +212,7 @@ with colA:
                         st.session_state['email_features'] = email_features
                     
                     # Display function results
-                    if function_result:
+                    if model_choice=="Single Agent" and function_result:
                         st.info(f"📊 {len(function_result)} function(s) executed")
                         if isinstance(function_result, dict) and "response" in function_result:
                             st.markdown("**Function Responses:**")

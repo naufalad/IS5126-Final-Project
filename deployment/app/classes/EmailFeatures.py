@@ -92,6 +92,8 @@ class EmailFeatures(BaseModel):
     contains_attachments: bool = Field(False, description="Contains attachments")
     financial_amount: Optional[str] = Field(None, description="Financial amounts")
 
+    category: Optional[str] = Field(None)
+
     # Validators to set defaults when None is provided
     @field_validator('location_type', mode='before')
     @classmethod

@@ -44,6 +44,7 @@ Available functions:
 3. attraction_discovery - For emails about travel, tourism, venues, or local attractions
 
 IMPORTANT: 
+- Skip the function calling if its falls under to spam category
 - You can call MULTIPLE functions if the email contains information relevant to multiple categories
 - For example, if an email is about a concert, you might call BOTH create_event AND spotify_link_discovery
 - The order of the function calls explains the priority of function to be called first
