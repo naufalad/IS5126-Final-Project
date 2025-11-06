@@ -77,7 +77,7 @@ body, .stApp {
 
 
 # Backend API configuration
-load_dotenv()  # Load .env file if it exists
+# load_dotenv()  # Load .env file if it exists
 
 BACKEND_URL = os.getenv("BACKEND_API", "http://127.0.0.1:8000")
 
@@ -683,6 +683,7 @@ with st.form("new_event_form", clear_on_submit=True):
 
 # # Timeline view (full width, below calendar)
 # render_timeline(events, st.session_state.calendar_date.year, st.session_state.calendar_date.month)
+
 
 
 
