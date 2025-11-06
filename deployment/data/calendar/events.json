@@ -237,5 +237,38 @@
     "meeting_url": "",
     "urgency_level": "high",
     "action_required": "confirm"
+  },
+  {
+    "title": "Concert in Singapore",
+    "start": null,
+    "end": null,
+    "description": "Check out the new song 'Blinding Lights' by The Weeknd! Don't miss his upcoming concert in Singapore. Also check out 'Shape of You' by Ed Sheeran.",
+    "location": "Singapore",
+    "label": "reminder",
+    "meeting_url": "",
+    "urgency_level": "low",
+    "action_required": "none"
+  },
+  {
+    "title": "Concert Announcement",
+    "start": null,
+    "end": null,
+    "description": "Check out the new song 'Blinding Lights' by The Weeknd! Don't miss his upcoming concert in Singapore. Also check out 'Shape of You' by Ed Sheeran.",
+    "location": "Singapore",
+    "label": "reminder",
+    "meeting_url": "",
+    "urgency_level": "medium",
+    "action_required": "none"
+  },
+  {
+    "title": "Upcoming concert by The Weeknd",
+    "start": null,
+    "end": null,
+    "description": "Check out the new song 'Blinding Lights' by The Weeknd! Don't miss his upcoming concert in Singapore. Also check out 'Shape of You' by Ed Sheeran.",
+    "location": "Singapore",
+    "label": "reminder",
+    "meeting_url": "",
+    "urgency_level": "low",
+    "action_required": "none"
   }
 ]
