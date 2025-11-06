@@ -73,7 +73,7 @@ if received and received.get("event_type") == "notification":
         "timestamp": ts,
         "pinned": False,
         "meta": {
-            "event_type": received.get("event_type"),
+            "categories": received.get("categories"),
             "urgency": received.get("urgency_level"),
             "contains_links": received.get("contains_links")
         }
@@ -151,7 +151,7 @@ if notifs:
     for i, n in enumerate(ordered):
         render_card(n, i)
 else:
-    st.info("No notifications yet. Go to Receive Email and pick a record with event_type = 'notification'.")
+    st.info("No notifications yet. Go to Receive Email and pick a record with categories = 'notification'.")
 
 
 

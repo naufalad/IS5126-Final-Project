@@ -202,8 +202,6 @@ async def health():
 async def predict(req: PredictRequest):
     """Predict email category using selected model"""
     try:
-        MODEL_DIRECTORY = os.path.join(_DEV_DIR, "models")
-        
         # Load selected model
         match req.model:
             case 1:

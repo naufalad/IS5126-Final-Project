@@ -62,14 +62,13 @@ body, .stApp {
     background-color: #1e1e1e;
 }
 
-/* Event badge */
 .event-badge {
     font-size: 0.65em;
     padding: 3px 5px;
     margin: 2px 0;
     border-radius: 4px;
-    background-color: rgba(29, 185, 84, 0.2);
-    color: #1DB954;
+    background-color: rgba(0,0,0,0.3); /* soft dark fallback */
+    color: #000000;             /* teks hitam */
     display: block;
     line-height: 1.4;
 }
@@ -188,6 +187,21 @@ def render_calendar(events, year, month):
         "reminder": "🟡",
         "other": "⚫"
     }
+    category_colors = {
+        "meeting": "#A3C4F3",      # soft blue
+        "appointment": "#B8E6B8",  # soft green
+        "deadline": "#F5A3A3",     # soft red
+        "reminder": "#FFE5A3",     # soft yellow
+        "other": "#D3D3D3",        # soft gray
+        "update": "#D8B3F5"        # soft purple
+    }
+
+    # Opacity based on urgency
+    priority_opacity = {
+        "low": 0.2,
+        "medium": 0.4,
+        "high": 0.6
+    } 
     
     st.subheader(f"{month_name} {year}")
     
@@ -240,20 +254,49 @@ def render_calendar(events, year, month):
                             unsafe_allow_html=True
                         )
                         
-                        # Show event indicators
+                        # # Show event indicators
+                        # Show event indicators with color based on category & priority
                         if day_events:
-                            event_html = ""
-                            for event in day_events[:3]:  # Show max 3 events
-                                label_color = label_colors.get(event.get("label", "other"), "⚫")
-                                title = event.get("title", "")
-                                event_html += f"<div class='event-badge' style='color: #7f8c8d'>{label_color} {title}</div>"
+                            # Use first event or choose the one with highest urgency
+                            event = day_events[0]  # or max(day_events, key=lambda x: x.get("urgency_score",0))
+                            category = event.get("label", "other")
+                            urgency = event.get("urgency_level", "low")
                             
+                            base_color = category_colors.get(category, "#9E9E9E")
+                            opacity = priority_opacity.get(urgency, 0.2)
+                            
+                            # Use RGBA for background color
+                            bg_style = f"background-color: {base_color}; opacity: {opacity}; border-radius: 8px; min-height: 100px; padding: 8px;"
+                            
+                            # Day number
+                            day_style = f"<span style='font-weight: bold; font-size: 1.2em;'>{day}</span>"
+                            
+                            # Create container with background color
+                            event_html = f"<div style='{bg_style}'>{day_style}<br>"
+                            
+                            # Display up to 3 events
+                            for ev in day_events[:3]:
+                                event_html += f"<div class='event-badge'>{ev.get('title','')}</div>"
                             if len(day_events) > 3:
-                                event_html += f"<div class='event-badge' style='font-style: italic; color: #7f8c8d;'>+{len(day_events) - 3} more</div>"
+                                event_html += f"<div class='event-badge'>+{len(day_events)-3} more</div>"
                             
-                            st.markdown(event_html + "</div>", unsafe_allow_html=True)
-                        else:
-                            st.markdown("</div>", unsafe_allow_html=True)
+                            event_html += "</div>"
+                            
+                            st.markdown(event_html, unsafe_allow_html=True)
+
+                        # if day_events:
+                        #     event_html = ""
+                        #     for event in day_events[:3]:  # Show max 3 events
+                        #         label_color = label_colors.get(event.get("label", "other"), "⚫")
+                        #         title = event.get("title", "")
+                        #         event_html += f"<div class='event-badge' style='color: #7f8c8d'>{label_color} {title}</div>"
+                            
+                        #     if len(day_events) > 3:
+                        #         event_html += f"<div class='event-badge' style='font-style: italic; color: #7f8c8d;'>+{len(day_events) - 3} more</div>"
+                            
+                        #     st.markdown(event_html + "</div>", unsafe_allow_html=True)
+                        # else:
+                        #     st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_timeline(events, year, month):
@@ -640,5 +683,6 @@ with st.form("new_event_form", clear_on_submit=True):
 
 # # Timeline view (full width, below calendar)
 # render_timeline(events, st.session_state.calendar_date.year, st.session_state.calendar_date.month)
+
 
 

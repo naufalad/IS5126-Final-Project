@@ -82,7 +82,7 @@ df = pd.DataFrame(data)
 st.subheader("Basic Statistics")
 col1, col2, col3, col4 = st.columns(4)
 col1.metric(" Total Emails", len(df))
-col2.metric(" Event Types", df["event_type"].nunique(dropna=True))
+col2.metric("categories", df["categories"].nunique(dropna=True))
 col3.metric(" Urgency Levels", df["urgency_level"].nunique(dropna=True))
 col4.metric(" Action Types", df["action_required"].nunique(dropna=True))
 
@@ -93,14 +93,14 @@ st.subheader("Data Distribution")
 colA, colB = st.columns(2)
 
 with colA:
-    if "event_type" in df.columns:
-        s = df["event_type"].fillna("(none)").value_counts().reset_index()
-        s.columns = ["Event Type", "Count"]
+    if "categories" in df.columns:
+        s = df["categories"].fillna("(none)").value_counts().reset_index()
+        s.columns = ["categories", "Count"]
         chart = alt.Chart(s).mark_bar().encode(
             x="Count:Q",
-            y=alt.Y("Event Type:N", sort="-x"),
-            color=alt.Color("Event Type:N")  # warna asli kategori
-        ).properties(title="Event Type Distribution", height=320)
+            y=alt.Y("categories:N", sort="-x"),
+            color=alt.Color("categories:N")  # warna asli kategori
+        ).properties(title="Categories Distribution", height=320)
         st.altair_chart(chart, use_container_width=True)
 
 with colB:

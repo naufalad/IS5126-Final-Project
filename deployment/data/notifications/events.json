@@ -1,14 +1,62 @@
 [
   {
-    "id": 8448720380,
-    "title": "Subject: Your post was moved to \"Programming Help\"\n\nBody: Trending: \"cooking\" (258 comments). View: support.site/ticket/456.",
-    "preview": "Subject: Your post was moved to \"Programming Help\"\n\nBody: Trending: \"cooking\" (258 comments). View: support.site/ticket/456.",
-    "timestamp": "2025-10-31T16:26:31.424489Z",
-    "pinned": true,
+    "id": 8448720381,
+    "title": "Subject: New comment on your thread\n\nBody: User @jane_doe replied: 'Try using a dictionary here.' View discussion: forumhub.com/thread/1023",
+    "preview": "Subject: New comment on your thread\n\nBody: User @jane_doe replied: 'Try using a dictionary here.' View discussion: forumhub.com/thread/1023",
+    "timestamp": "2025-11-01T09:15:20.123456Z",
+    "pinned": false,
     "meta": {
-      "event_type": "notification",
+      "event_type": "forum",
       "urgency": "low",
       "contains_links": true
+    }
+  },
+  {
+    "id": 8448720382,
+    "title": "Subject: Your subscription will renew soon\n\nBody: Your Premium subscription is set to renew on 2025-11-15. Review your billing details.",
+    "preview": "Subject: Your subscription will renew soon\n\nBody: Your Premium subscription is set to renew on 2025-11-15. Review your billing details.",
+    "timestamp": "2025-11-02T12:00:00.000000Z",
+    "pinned": false,
+    "meta": {
+      "event_type": "notification",
+      "urgency": "medium",
+      "contains_links": true
+    }
+  },
+  {
+    "id": 8448720383,
+    "title": "Subject: Flash Sale – 50% OFF\n\nBody: Limited time offer! Get 50% off all electronics today. Visit shop.example.com to claim your deal.",
+    "preview": "Subject: Flash Sale – 50% OFF\n\nBody: Limited time offer! Get 50% off all electronics today. Visit shop.example.com to claim your deal.",
+    "timestamp": "2025-11-03T08:30:45.789012Z",
+    "pinned": true,
+    "meta": {
+      "event_type": "promotion",
+      "urgency": "high",
+      "contains_links": true
+    }
+  },
+  {
+    "id": 8448720384,
+    "title": "Subject: Password Reset Requested\n\nBody: Click the link to reset your password. If this wasn’t you, ignore this email.",
+    "preview": "Subject: Password Reset Requested\n\nBody: Click the link to reset your password. If this wasn’t you, ignore this email.",
+    "timestamp": "2025-11-04T14:22:10.654321Z",
+    "pinned": false,
+    "meta": {
+      "event_type": "verification",
+      "urgency": "high",
+      "contains_links": true
+    }
+  },
+  {
+    "id": 8448720385,
+    "title": "Subject: System Maintenance Scheduled\n\nBody: Our servers will be down on 2025-11-10 from 01:00 to 03:00 UTC for maintenance.",
+    "preview": "Subject: System Maintenance Scheduled\n\nBody: Our servers will be down on 2025-11-10 from 01:00 to 03:00 UTC for maintenance.",
+    "timestamp": "2025-11-05T18:45:00.111213Z",
+    "pinned": false,
+    "meta": {
+      "event_type": "update",
+      "urgency": "low",
+      "contains_links": false
     }
   }
 ]
