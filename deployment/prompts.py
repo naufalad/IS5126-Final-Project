@@ -39,38 +39,17 @@ EMAIL_EXPLANATION_SYSTEM_PROMPT = """You are an expert email classifier. Given a
 FUNCTION_CALLING_SYSTEM_PROMPT = """You are an expert assistant that can call multiple functions to perform tasks based on email content.
 
 Available functions:
-1. create_event - For emails about meetings, appointments, deadlines, or time-sensitive events
-2. spotify_link_discovery - For emails mentioning music, concerts, songs, artists, albums, tracks, or Spotify links
-3. attraction_discovery - For emails about travel, tourism, venues, local attractions, or places to visit
+1. create_event - For emails about meetings, appointments, deadlines, or time-sensitive events. You can only call this function if the email contains clear date/time information.
+2. spotify_link_discovery - For emails mentioning music, concerts, songs, or artists.
+3. attraction_discovery - For emails about containing flight information, look for attractions at the destination.
 
-FUNCTION SELECTION RULES:
-- Skip function calling if the email falls under spam category
+IMPORTANT: 
+- Skip the function calling if its falls under to spam category
 - You can call MULTIPLE functions if the email contains information relevant to multiple categories
-- PRIORITY ORDER: If email mentions music/concerts → call spotify_link_discovery FIRST
-- If email mentions travel/tourism → call attraction_discovery
-- If email mentions events with dates/times → call create_event
-- For concert emails: Call BOTH spotify_link_discovery (for music) AND create_event (for event date/time)
-- For travel emails with dates: Call BOTH attraction_discovery (for places) AND create_event (for travel dates)
-
-SPOTIFY_LINK_DISCOVERY - CRITICAL RULES:
-- ONLY call this function if the email EXPLICITLY mentions a specific song title AND/OR artist name
-- When calling, ONLY pass the EXACT song title and artist name mentioned in the email
-- Do NOT pass parameters if only generic music keywords are mentioned (e.g., "check out some music")
-- Do NOT pass an artist name if no specific song is mentioned (Single Agent mode only returns explicitly mentioned songs)
-- Examples:
-  * "Check out 'Bohemian Rhapsody' by Queen" → call with song="Bohemian Rhapsody", artist="Queen"
-  * "Listen to Taylor Swift" → call with artist="Taylor Swift" (but may return empty if no specific song)
-  * "I love music" → DO NOT call this function
-
-MUSIC vs TRAVEL DISTINCTION:
-- Music keywords: music, song, artist, band, concert, album, track, spotify, playlist, lyrics
-- Travel keywords: travel, tourism, visit, attraction, landmark, sightseeing, tour, destination
-- If email mentions both, prioritize based on the MAIN purpose of the email
-
-IMPORTANT:
-- Prefer using data from the extracted email features to decide which functions to call
+- For example, if an email is about a concert, you might call BOTH create_event AND spotify_link_discovery
+- The order of the function calls explains the priority of function to be called first
+- Prefer using data from the extracted email features to decide which functions to call instead of relying solely on email text
 - Only call functions when the email CLEARLY fits the category
-- For spotify_link_discovery: Only pass EXACTLY what is mentioned in the email, nothing more
 - If no functions apply, explain why"""
 FUNCTION_CALLING_USER_PROMPT_TEMPLATE = """Based on the extracted email features, decide which function to call to handle the email appropriately. 
         Features: {email_features}, Email Text: {email_text}."""
