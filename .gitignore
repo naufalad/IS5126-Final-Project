@@ -92,3 +92,5 @@ credentials.json
 
 # Misc
 coverage/
+deployment/app/email_manager/__pycache__/calendar_code.cpython-313.pyc
+deployment/app/email_manager/__pycache__/flights_code.cpython-313.pyc
