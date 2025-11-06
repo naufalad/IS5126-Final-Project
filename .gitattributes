@@ -1,3 +1,4 @@
 deployment/app/models/chocka.joblib filter=lfs diff=lfs merge=lfs -text
 *.joblib filter=lfs diff=lfs merge=lfs -text
 saved_models/*.joblib filter=lfs diff=lfs merge=lfs -text
+Deployment/data/email_features.json filter=lfs diff=lfs merge=lfs -text
