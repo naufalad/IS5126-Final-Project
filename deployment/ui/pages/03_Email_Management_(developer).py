@@ -6,6 +6,8 @@ from openai import OpenAI
 import re
 import requests
 from dotenv import load_dotenv
+import urllib.parse as _urlparse
+import time
 
 
 st.set_page_config(page_title="Email Prediction and Extraction", page_icon="📥", layout="wide")
@@ -39,6 +41,28 @@ hr { border: 1px solid #333; }
 load_dotenv()  # Load .env file if it exists
 
 BACKEND_URL = os.getenv("BACKEND_API", "http://127.0.0.1:8000")
+
+# ---------------------------------------------
+# Helper: extract explicit location mention
+# 优先使用已提取的 features.location；否则用简单规则从正文中抓取“专有名词, 专有名词”样式的地点，例如
+# "Marina Bay Sands, Singapore"、"Changi Airport, Singapore"
+# ---------------------------------------------
+def extract_explicit_location(subject: str, body: str, features: dict | None) -> str | None:
+    try:
+        if features and isinstance(features, dict):
+            loc = features.get("location") or features.get("venue")
+            if isinstance(loc, str) and loc.strip():
+                return loc.strip()
+    except Exception:
+        pass
+    text = f"{subject or ''}\n{body or ''}"
+    # 简单启发式：匹配形如 "Word Word, Word" 的短语（首字母大写的词组 + 逗号 + 首字母大写的词组）
+    # 尽量不贪婪，避免抓太长
+    pattern = r"([A-Z][A-Za-z]+(?: [A-Z][A-Za-z]+)*, [A-Z][A-Za-z]+(?: [A-Z][A-Za-z]+)*)"
+    m = re.search(pattern, text)
+    if m:
+        return m.group(1).strip()
+    return None
 
 def load_local_data(show_debug=False):
     """Load email cases from JSON file - always reloads fresh data"""
@@ -109,8 +133,8 @@ def display_spotify_results(func_result: dict):
     
     # Different header based on mode
     if mode == "recommendations":
-        st.success(f"🎵 猜你喜欢 - {len(songs)} 首推荐歌曲")
-        st.caption("💡 基于您的邮件内容，为您推荐以下歌曲")
+        st.success(f"🎵 You Might Like - {len(songs)} recommendations")
+        st.caption("💡 Based on your email content, here are suggested songs")
     else:
         st.success(f"🎵 Found {len(songs)} Spotify song(s)!")
     
@@ -195,7 +219,9 @@ def display_spotify_results(func_result: dict):
         st.divider()
 
 
-def display_attraction_results(func_result_or_data: dict, auto_open: bool = False):
+def display_attraction_results(func_result_or_data: dict, auto_open: bool = False,
+                               direct_header: str | None = None,
+                               rec_header: str | None = None):
     """Display attraction discovery results with Google Maps links.
     Supports two categories: direct_match and recommendations.
     Accepts either the full function_result dict (with data field) or a data dict.
@@ -285,13 +311,15 @@ def display_attraction_results(func_result_or_data: dict, auto_open: bool = Fals
 
     # Display direct match attractions (mentioned location)
     if direct_match:
-        st.markdown("<div class='section-header'>📍 Direct Match - Mentioned Location</div>", unsafe_allow_html=True)
+        header_txt = direct_header or "📍 Direct Match - Mentioned Location"
+        st.markdown(f"<div class='section-header'>{header_txt}</div>", unsafe_allow_html=True)
         for i, attr in enumerate(direct_match):
             render_attraction(attr, auto_open_first=(i == 0))
     
     # Display recommendations (if requested)
     if recommendations:
-        st.markdown("<div class='section-header'>🌟 Recommended Attractions</div>", unsafe_allow_html=True)
+        header_txt = rec_header or "🌟 Recommended Attractions"
+        st.markdown(f"<div class='section-header'>{header_txt}</div>", unsafe_allow_html=True)
         for i, attr in enumerate(recommendations):
             render_attraction(attr, auto_open_first=(i == 0 and len(direct_match) == 0))
 
@@ -320,27 +348,48 @@ def call_function_call_api(email_data: dict) -> dict:
         return None
 
 def call_multi_agent_api(email_data: dict) -> dict:
-    """Call backend API /create endpoint to process email and create calendar event"""
-    try:
-        response = requests.post(
-            f"{BACKEND_URL}/create",
-            json=email_data,
-            timeout=30  # Longer timeout for LLM processing
-        )
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.ConnectionError:
-        st.error("Cannot connect to backend server. Please ensure the backend is running on port 8000.")
-        return None
-    except requests.exceptions.Timeout:
-        st.error("Request timed out. The backend may be processing - please try again.")
-        return None
-    except requests.exceptions.HTTPError as e:
-        st.error(f"HTTP Error: {e.response.status_code} - {e.response.text}")
-        return None
-    except Exception as e:
-        st.error(f"Failed to call API: {str(e)}")
-        return None
+    """Call backend API /create endpoint to process email and create calendar event with longer timeout and retry."""
+    url = f"{BACKEND_URL}/create"
+    max_retries = 2
+    backoff_seconds = 2
+    for attempt in range(1, max_retries + 1):
+        start_ts = time.time()
+        try:
+            response = requests.post(
+                url,
+                json=email_data,
+                timeout=120  # extended timeout for multi-agent LLM processing
+            )
+            response.raise_for_status()
+            data = response.json()
+            data["_elapsed_seconds"] = round(time.time() - start_ts, 2)
+            return data
+        except requests.exceptions.ReadTimeout:
+            if attempt < max_retries:
+                time.sleep(backoff_seconds)
+                continue
+            st.error("⏱️ Request timed out. The backend may still be processing. Please try again.")
+            st.caption(f"Endpoint: {url}")
+            return None
+        except requests.exceptions.ConnectionError:
+            st.error("Cannot connect to backend server. Please ensure the backend is running on port 8000.")
+            st.caption(f"Tried: {url}")
+            return None
+        except requests.exceptions.Timeout:
+            if attempt < max_retries:
+                time.sleep(backoff_seconds)
+                continue
+            st.error("Request timed out. The backend may be processing - please try again.")
+            st.caption(f"Endpoint: {url}")
+            return None
+        except requests.exceptions.HTTPError as e:
+            st.error(f"HTTP Error: {e.response.status_code} - {e.response.text}")
+            st.caption(f"Endpoint: {url}")
+            return None
+        except Exception as e:
+            st.error(f"Failed to call API: {str(e)}")
+            st.caption(f"Endpoint: {url}")
+            return None
 
 def call_predict_api(email_data: dict) -> dict:
     """Call backend API /predict endpoint to process email and create calendar event"""
@@ -457,12 +506,14 @@ with colA:
                 if api_response.get("success"):
                     # Handle Multi Agent response (different structure)
                     if model_choice == "Multi Agent":
-                        data = api_response.get("data", {})
+                        response_data = api_response.get("data", {})
                         st.success("✅ Multi-Agent processing completed")
+                        if "_elapsed_seconds" in api_response:
+                            st.caption(f"Backend elapsed: {api_response['_elapsed_seconds']}s")
                         
                         # Display calendar event if available
-                        if data.get("calendar_event"):
-                            calendar_data = data["calendar_event"]
+                        if response_data.get("calendar_event"):
+                            calendar_data = response_data["calendar_event"]
                             if calendar_data and calendar_data.get("calendar_event"):
                                 st.success("📅 Calendar event created successfully")
                                 calendar_event = calendar_data.get("calendar_event", {})
@@ -470,23 +521,54 @@ with colA:
                                     st.info(f"📅 Event: {calendar_event.get('title')}")
                         
                         # Display Spotify links if available
-                        if data.get("spotify_links"):
-                            spotify_data = data["spotify_links"]
+                        if response_data.get("spotify_links"):
+                            spotify_data = response_data["spotify_links"]
                             if spotify_data.get("success"):
                                 display_spotify_results({
                                     "function_name": "spotify_link_discovery",
                                     "data": spotify_data.get("data", {})
                                 })
                         
-                        # Display attractions if available
-                        if data.get("attractions"):
-                            attractions_data = data["attractions"]
+                        # Display attractions if available (move to right side; split direct vs 猜你喜欢)
+                        if response_data.get("attractions"):
+                            attractions_data = response_data["attractions"]
                             if attractions_data.get("success"):
-                                display_attraction_results(attractions_data, auto_open=st.session_state.get('auto_open_maps', False))
+                                subj = st.session_state.get("subject_area", "")
+                                bod = st.session_state.get("body_area", "")
+                                feats = response_data.get("features") or st.session_state.get('email_features')
+                                mention = extract_explicit_location(subj, bod, feats)
+
+                                dat = attractions_data.get("data", {})
+                                direct_list = dat.get("direct_match") or dat.get("attractions") or []
+                                rec_list = dat.get("recommendations") or []
+
+                                matched = []
+                                others = []
+                                if mention:
+                                    for it in direct_list:
+                                        loc = str(it.get("location", ""))
+                                        name = str(it.get("name", ""))
+                                        if mention.lower() in loc.lower() or mention.lower() in name.lower():
+                                            matched.append(it)
+                                        else:
+                                            others.append(it)
+                                else:
+                                    matched = direct_list
+
+                                st.session_state['attraction_display_data'] = {
+                                    "direct_match": matched,
+                                    "recommendations": []
+                                }
+                                # 猜你喜欢 = 未匹配的 direct + recommendations
+                                limited_recos = (others + rec_list)[:5]
+                                st.session_state['attraction_reco_data'] = {
+                                    "direct_match": limited_recos,
+                                    "recommendations": []
+                                }
                         
                         # Display features if available
-                        if data.get("features"):
-                            st.session_state['email_features'] = data["features"]
+                        if response_data.get("features"):
+                            st.session_state['email_features'] = response_data["features"]
                     
                     # Handle Single Agent response
                     else:
@@ -508,36 +590,37 @@ with colA:
                             else:
                                 # Process all function results (can be multiple functions)
                                 if isinstance(function_result, list):
+                                    # Single Agent：仅保留一个输出 —— 只返回邮件中直接提及的 location（构造 Google Maps 首条）
+                                    shown_once = False
                                     for func_result in function_result:
+                                        if shown_once:
+                                            break
                                         function_name = func_result.get("function_name", "")
-                                        
-                                        # Handle calendar event creation
-                                        if function_name == "create_event":
-                                            ics_file_path = func_result.get("data", {}).get("ics_file_path")
-                                            if ics_file_path:
-                                                st.success(f"📄 ICS file created: {ics_file_path}")
-                                                try:
-                                                    with open(ics_file_path, "rb") as f:
-                                                        ics_data = f.read()
-                                                    st.download_button(
-                                                        label="📥 Download ICS Calendar File",
-                                                        data=ics_data,
-                                                        file_name=ics_file_path,
-                                                        mime="text/calendar",
-                                                        type="primary"
-                                                    )
-                                                except Exception as e:
-                                                    st.error(f"Failed to download ICS file: {str(e)}")
-                                            else:
-                                                st.info("ℹ️ No calendar file generated (no time-based event detected)")
-                                        
-                                        # Handle Spotify link discovery
-                                        elif function_name == "spotify_link_discovery":
-                                            display_spotify_results(func_result)
-                                        
-                                        # Handle attraction discovery
-                                        elif function_name == "attraction_discovery":
-                                            display_attraction_results(func_result, auto_open=st.session_state.get('auto_open_maps', False))
+
+                                        if function_name == "attraction_discovery":
+                                            # 从邮件中抽取直接提及的地点；仅返回该地点，并给出 Google Maps 搜索链接
+                                            subj = st.session_state.get("subject_area", "")
+                                            bod = st.session_state.get("body_area", "")
+                                            feats = st.session_state.get('email_features')
+                                            mention = extract_explicit_location(subj, bod, feats)
+
+                                            render_data = {"direct_match": [], "recommendations": []}
+                                            if mention:
+                                                q = _urlparse.quote(mention)
+                                                gm_url = f"https://www.google.com/maps/search/?api=1&query={q}"
+                                                render_data["direct_match"] = [{
+                                                    "name": mention,
+                                                    "location": mention,
+                                                    "type": "place",
+                                                    "description": "Directly mentioned in the email",
+                                                    "map_link": gm_url
+                                                }]
+                                            # 如果没有解析到明确地点，则清空（Single Agent 不展示其他）
+                                            st.session_state['attraction_display_data'] = render_data
+                                            shown_once = True
+                                        else:
+                                            # Single Agent 其余功能输出（如 create_event / spotify）在该模式下不显示
+                                            continue
                                 else:
                                     st.info("ℹ️ No functions were executed")
                         else:
@@ -564,6 +647,23 @@ with colB:
     
     st.markdown("**Body:**")
     st.text_area("", body, key="body_area", height=300)
+
+    # 在 Email 内容下方展示地点候选/景点结果（右栏更宽）
+    if 'attraction_display_data' in st.session_state and st.session_state['attraction_display_data']:
+        st.markdown("---")
+        display_attraction_results(
+            st.session_state['attraction_display_data'],
+            auto_open=st.session_state.get('auto_open_maps', False),
+            direct_header="📍 Mentioned Location"
+        )
+    if 'attraction_reco_data' in st.session_state and st.session_state['attraction_reco_data']:
+        if st.session_state['attraction_reco_data'].get('direct_match') or st.session_state['attraction_reco_data'].get('recommendations'):
+            st.markdown("---")
+            display_attraction_results(
+                st.session_state['attraction_reco_data'],
+                auto_open=st.session_state.get('auto_open_maps', False),
+                rec_header="🌟 You Might Like"
+            )
 
 st.divider()
 st.subheader("Extracted Features")
