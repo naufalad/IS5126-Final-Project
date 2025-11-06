@@ -1,21 +1,7 @@
 import streamlit as st
 
 
-st.markdown("""
-<style>
-/* Sidebar main container */
-section[data-testid="stSidebar"] {
-  background-color: #1E1E1E !important;
-  color: #FFFFFF !important;
-}
 
-/* Sidebar navigation items / headers etc */
-section[data-testid="stSidebar"] div.css-1aumxhk {
-  background-color: #2E2E2E !important;
-  color: #FFFFFF !important;
-}
-</style>
-""", unsafe_allow_html=True)
 
 st.set_page_config(page_title="Email Dashboard", page_icon="📊", layout="wide")
 
