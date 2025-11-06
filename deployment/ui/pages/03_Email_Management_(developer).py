@@ -2,7 +2,7 @@ import os
 import json
 import pandas as pd
 import streamlit as st
-from openai import OpenAI
+# from openai import OpenAI
 import re
 import requests
 from dotenv import load_dotenv
@@ -57,14 +57,14 @@ def calendar_path():
     ui_dir = os.path.dirname(current_dir)  # .../ui
     return os.path.join(os.path.dirname(ui_dir), "data", "calendar", "events.json")
 
-def create_openai_client():
-    api = os.getenv("OPENAI_API_KEY")
-    if not api:
-        return None
-    try:
-        return OpenAI(api_key=api)
-    except Exception:
-        return None
+# def create_openai_client():
+#     api = os.getenv("OPENAI_API_KEY")
+#     if not api:
+#         return None
+#     try:
+#         return OpenAI(api_key=api)
+#     except Exception:
+#         return None
 
 def call_function_call_api(email_data: dict) -> dict:
     """Call backend API /function_call endpoint to process email and create calendar event"""
