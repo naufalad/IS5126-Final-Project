@@ -14,9 +14,6 @@ client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
 auth_manager = SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
 spotify = spotipy.Spotify(auth_manager=auth_manager)
 
-results = spotify.search(q="track:Blinding Lights artist:The Weeknd", type="track", limit=1)
-print(results["tracks"]["items"][0]["external_urls"]["spotify"])
-
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Load environment variables
