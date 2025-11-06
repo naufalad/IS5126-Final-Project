@@ -9,7 +9,7 @@ import altair as alt
 import plotly.express as px
 import plotly.graph_objects as go
 import requests
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
 
 st.set_page_config(page_title="Calendar", page_icon="🗓️", layout="wide")
@@ -683,6 +683,7 @@ with st.form("new_event_form", clear_on_submit=True):
 
 # # Timeline view (full width, below calendar)
 # render_timeline(events, st.session_state.calendar_date.year, st.session_state.calendar_date.month)
+
 
 
 
