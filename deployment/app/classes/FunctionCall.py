@@ -153,41 +153,14 @@ class FunctionCall():
             
             print(f"📍 Using location: {location}")
             
-            # Multi-Agent mode: Use CrewAI agents
+            # Multi-Agent mode: Use CrewAI agents (separate function)
             if use_multi_agent:
                 from email_manager.attraction_code import process_attraction_discovery_multi_agent
                 return process_attraction_discovery_multi_agent(self.email_features, self.email_text)
             
-            # Single-Agent mode: Only extract direct match for the mentioned location (no recommendations)
-            from email_manager.flights_code import get_attractions_with_maps
-            
-            # Get direct match attractions only for the explicitly mentioned location (limit=3)
-            print(f"🔍 Single-Agent: Extracting attractions for '{location}' only...")
-            direct_attractions_data = get_attractions_with_maps(destination=location, limit=3)
-            
-            # Format direct match attractions
-            direct_match = []
-            for attr in direct_attractions_data:
-                direct_match.append({
-                    "name": attr.get("name", "Unknown Attraction"),
-                    "location": location,  # Use the explicitly mentioned location
-                    "type": attraction_type or "general",
-                    "description": attr.get("description", ""),
-                    "map_link": attr.get("map_link", ""),
-                    "fun_fact": attr.get("fun_fact", "")
-                })
-            
-            print(f"✅ Single-Agent: Found {len(direct_match)} attraction(s) for '{location}'")
-            
-            # Single Agent: No recommendations - only return direct match
-            return {
-                "message": f"Successfully discovered {len(direct_match)} attraction(s) for {location} (Single-Agent: direct match only)",
-                "success": True,
-                "data": {
-                    "direct_match": direct_match,
-                    "recommendations": []  # Single Agent never returns recommendations
-                }
-            }
+            # Single-Agent mode: Use dedicated single agent function (separate function)
+            from email_manager.flights_code import process_attraction_discovery_single_agent
+            return process_attraction_discovery_single_agent(self.email_features, self.email_text)
             
         except Exception as e:
             error_msg = f"❌ Failed to discover attractions: {e}"
@@ -288,17 +261,17 @@ spotify_link_schema = {
     "type": "function",
     "function": {
         "name": "spotify_link_discovery",
-        "description": "Discover Spotify links for songs or artists mentioned in the email. Use this when the email mentions music, concerts, or artists.",
+        "description": "Discover Spotify links for songs or artists EXPLICITLY mentioned in the email. Use this ONLY when the email explicitly mentions a specific song title and/or artist name. SINGLE AGENT MODE: Only returns songs that are EXPLICITLY mentioned - does NOT return recommendations. DO NOT use for generic music mentions without specific song/artist names.",
         "parameters": {
             "type": "object",
             "properties": {
                 "artist": {
                     "type": "string",
-                    "description": "Name of the artist or band"
+                    "description": "EXACT name of the artist or band EXPLICITLY mentioned in the email. Only include if the email specifically mentions an artist name. Do NOT infer or suggest."
                 },
                 "song": {
                     "type": "string",
-                    "description": "Name of the song or track"
+                    "description": "EXACT name of the song or track EXPLICITLY mentioned in the email. Only include if the email specifically mentions a song title. Do NOT infer or suggest. If only artist is mentioned without a specific song, you may omit this, but Single Agent mode may return empty results."
                 }
             },
             "required": []
@@ -310,13 +283,13 @@ attraction_discovery_schema = {
     "type": "function",
     "function": {
         "name": "attraction_discovery",
-        "description": "Discover attractions, venues, or points of interest based on location mentioned in the email. Use this when the email mentions travel, tourism, or local attractions.",
+        "description": "Discover attractions, venues, or points of interest based on location mentioned in the email. Use this when the email mentions travel, tourism, visiting places, local attractions, landmarks, or sightseeing. DO NOT use this for music venues or concert locations - use spotify_link_discovery instead for music-related content.",
         "parameters": {
             "type": "object",
             "properties": {
                 "location": {
                     "type": "string",
-                    "description": "Location name (city, region, or address)"
+                    "description": "Location name (city, region, or address) mentioned in the email"
                 },
                 "attraction_type": {
                     "type": "string",

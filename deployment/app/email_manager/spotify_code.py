@@ -42,16 +42,26 @@ def parse_song_input(text: str) -> Dict[str, Optional[str]]:
     """
     Extract song title and artist from text using OpenAI.
     Returns dict with 'title' and 'artist' fields.
+    IMPORTANT: Only extract EXACTLY what is mentioned in the text. Do not infer or suggest.
     title=None if no song mentioned.
     """
     if not client:
         raise ValueError("OpenAI client not initialized. Set OPENAI_API_KEY.")
     
     prompt = f"""
-    Extract the song title and artist from this text.
+    Extract ONLY the song title and artist that are EXPLICITLY mentioned in this text.
+    
+    CRITICAL RULES:
+    - Only extract songs/artists that are DIRECTLY mentioned in the text
+    - Do NOT infer, suggest, or recommend any songs
+    - Do NOT return popular songs by an artist if only the artist is mentioned
+    - If the text mentions "check out [song name] by [artist]", extract that exact song
+    - If the text only mentions an artist name without a specific song, set title to null
+    - If the text mentions multiple songs, extract the FIRST one mentioned
+    
     Respond ONLY as JSON with fields "title" and "artist".
-    If no song mentioned, set title to null.
-    If no artist mentioned, set artist to null.
+    - If no specific song mentioned, set title to null
+    - If no artist mentioned, set artist to null
 
     Text: "{text}"
     """
@@ -190,6 +200,8 @@ class SpotifyFunction:
     def discover_spotify_links(self) -> Dict[str, Any]:
         """
         Discover Spotify links based on provided artist and song, or parse from email text.
+        SINGLE AGENT MODE: Only returns songs EXPLICITLY mentioned in the email.
+        Does NOT return recommendations or latest songs by an artist.
         Returns formatted result compatible with FunctionCall expectations.
         """
         songs = []
@@ -197,6 +209,7 @@ class SpotifyFunction:
         try:
             # If song and artist are provided, search directly
             if self.song and self.artist:
+                print(f"🔍 Searching Spotify for: '{self.song}' by '{self.artist}'")
                 track = search_spotify_song(self.song, self.artist)
                 if track:
                     songs.append({
@@ -207,27 +220,33 @@ class SpotifyFunction:
                         "release_date": track.get("release_date"),
                         "preview_url": track.get("preview_url")
                     })
+                    print(f"✅ Found Spotify link for: {track['name']} by {track['artist']}")
+                else:
+                    print(f"⚠️ No Spotify track found for: '{self.song}' by '{self.artist}'")
             
-            # If only artist is provided, get latest songs
+            # SINGLE AGENT MODE: If only artist is provided WITHOUT song, do NOT return latest songs
+            # Only return if BOTH song and artist are explicitly mentioned
             elif self.artist and not self.song:
-                latest = latest_songs_by_artist(self.artist, limit=5)
-                for track in latest:
-                    songs.append({
-                        "song": track["name"],
-                        "artist": track["artist"],
-                        "spotify_url": track["spotify_url"],
-                        "album": track.get("album"),
-                        "release_date": track.get("release_date"),
-                        "preview_url": track.get("preview_url")
-                    })
+                print(f"⚠️ Only artist '{self.artist}' provided, but no specific song mentioned. Single Agent mode only returns explicitly mentioned songs.")
+                return {
+                    "message": f"Only artist '{self.artist}' mentioned, but no specific song. Single Agent mode only returns songs explicitly mentioned in the email.",
+                    "success": False,
+                    "data": {
+                        "songs": []
+                    }
+                }
             
             # If we have email text but no explicit song/artist, try to parse
             elif self.email_text and not self.song and not self.artist:
+                print(f"🔍 Parsing email text for explicitly mentioned songs...")
                 song_info = parse_song_input(self.email_text)
+                
+                # Only proceed if we have a SPECIFIC song title mentioned
                 if song_info.get("title"):
-                    # We have a song title
-                    artist = song_info.get("artist")
+                    # We have a song title - search for it
+                    artist = song_info.get("artist") or self.artist
                     if artist:
+                        print(f"🔍 Found explicit mention: '{song_info['title']}' by '{artist}'")
                         track = search_spotify_song(song_info["title"], artist)
                         if track:
                             songs.append({
@@ -238,18 +257,23 @@ class SpotifyFunction:
                                 "release_date": track.get("release_date"),
                                 "preview_url": track.get("preview_url")
                             })
+                            print(f"✅ Found Spotify link for: {track['name']} by {track['artist']}")
+                        else:
+                            print(f"⚠️ No Spotify track found for: '{song_info['title']}' by '{artist}'")
+                    else:
+                        print(f"⚠️ Song '{song_info['title']}' mentioned but no artist found")
                 elif song_info.get("artist"):
-                    # Only artist, no song
-                    latest = latest_songs_by_artist(song_info["artist"], limit=5)
-                    for track in latest:
-                        songs.append({
-                            "song": track["name"],
-                            "artist": track["artist"],
-                            "spotify_url": track["spotify_url"],
-                            "album": track.get("album"),
-                            "release_date": track.get("release_date"),
-                            "preview_url": track.get("preview_url")
-                        })
+                    # Only artist mentioned, no specific song - Single Agent mode does NOT return recommendations
+                    print(f"⚠️ Only artist '{song_info['artist']}' mentioned, but no specific song. Single Agent mode only returns explicitly mentioned songs.")
+                    return {
+                        "message": f"Only artist '{song_info['artist']}' mentioned, but no specific song. Single Agent mode only returns songs explicitly mentioned in the email.",
+                        "success": False,
+                        "data": {
+                            "songs": []
+                        }
+                    }
+                else:
+                    print(f"⚠️ No song or artist explicitly mentioned in email")
             
             # Format response
             if songs:

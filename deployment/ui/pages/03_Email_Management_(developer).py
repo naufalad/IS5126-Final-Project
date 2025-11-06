@@ -221,10 +221,14 @@ def display_spotify_results(func_result: dict):
 
 def display_attraction_results(func_result_or_data: dict, auto_open: bool = False,
                                direct_header: str | None = None,
-                               rec_header: str | None = None):
+                               rec_header: str | None = None,
+                               show_count: bool = True):
     """Display attraction discovery results with Google Maps links.
     Supports two categories: direct_match and recommendations.
     Accepts either the full function_result dict (with data field) or a data dict.
+    
+    Args:
+        show_count: If True, display the total count message. Default True.
     """
     # Normalize input
     data = func_result_or_data.get("data", func_result_or_data)
@@ -244,7 +248,9 @@ def display_attraction_results(func_result_or_data: dict, auto_open: bool = Fals
         st.warning("⚠️ No attractions found")
         return
 
-    st.success(f"🎭 Found {total_count} attraction(s)!")
+    # Only show count if requested
+    if show_count:
+        st.success(f"🎭 Found {total_count} attraction(s)!")
 
     # Styling similar to Spotify cards
     st.markdown(
@@ -326,25 +332,31 @@ def display_attraction_results(func_result_or_data: dict, auto_open: bool = Fals
 
 def call_function_call_api(email_data: dict) -> dict:
     """Call backend API /function_call endpoint to process email and create calendar event"""
+    url = f"{BACKEND_URL}/function_call"
     try:
+        # Increased timeout to 120 seconds for Single Agent processing (includes LLM calls)
         response = requests.post(
-            f"{BACKEND_URL}/function_call",
+            url,
             json=email_data,
-            timeout=60  # Increased timeout for Single Agent processing
+            timeout=120
         )
         response.raise_for_status()
         return response.json()
-    except requests.exceptions.ConnectionError:
-        st.error("Cannot connect to backend server. Please ensure the backend is running on port 8000.")
-        return None
     except requests.exceptions.Timeout:
-        st.error("Request timed out. The backend may be processing - please try again.")
+        st.error("⏱️ Request timed out after 120 seconds. The backend may still be processing.")
+        st.info("💡 **Tips:**\n- Single Agent processing can take 60-120 seconds\n- Try using Multi Agent mode for faster processing\n- Check backend logs for more details")
+        return None
+    except requests.exceptions.ConnectionError:
+        st.error("❌ Cannot connect to backend server. Please ensure the backend is running on port 8000.")
+        st.info(f"Backend URL: {BACKEND_URL}")
         return None
     except requests.exceptions.HTTPError as e:
-        st.error(f"HTTP Error: {e.response.status_code} - {e.response.text}")
+        st.error(f"HTTP Error {e.response.status_code}: {e.response.text}")
         return None
     except Exception as e:
-        st.error(f"Failed to call API: {str(e)}")
+        st.error(f"❌ Failed to call API: {str(e)}")
+        import traceback
+        st.code(traceback.format_exc())
         return None
 
 def call_multi_agent_api(email_data: dict) -> dict:
@@ -393,25 +405,29 @@ def call_multi_agent_api(email_data: dict) -> dict:
 
 def call_predict_api(email_data: dict) -> dict:
     """Call backend API /predict endpoint to process email and create calendar event"""
+    url = f"{BACKEND_URL}/predict"
     try:
+        # Increased timeout to 60 seconds for model prediction
         response = requests.post(
-            f"{BACKEND_URL}/predict",
+            url,
             json=email_data,
-            timeout=30  # Longer timeout for LLM processing
+            timeout=60
         )
         response.raise_for_status()
         return response.json()
-    except requests.exceptions.ConnectionError:
-        st.error("Cannot connect to backend server. Please ensure the backend is running on port 8000.")
-        return None
     except requests.exceptions.Timeout:
-        st.error("Request timed out. The backend may be processing - please try again.")
+        st.error("⏱️ Request timed out after 60 seconds. Model prediction may be taking longer than expected.")
+        st.info("💡 **Tips:**\n- Large emails may take longer to process\n- Check backend logs for more details")
+        return None
+    except requests.exceptions.ConnectionError:
+        st.error("❌ Cannot connect to backend server. Please ensure the backend is running on port 8000.")
+        st.info(f"Backend URL: {BACKEND_URL}")
         return None
     except requests.exceptions.HTTPError as e:
-        st.error(f"HTTP Error: {e.response.status_code} - {e.response.text}")
+        st.error(f"HTTP Error {e.response.status_code}: {e.response.text}")
         return None
     except Exception as e:
-        st.error(f"Failed to call API: {str(e)}")
+        st.error(f"❌ Failed to call API: {str(e)}")
         return None
 
 # Add refresh button and debug toggle
@@ -483,6 +499,16 @@ with colA:
 • **For locations**: It uses two agents: one for extraction and one for analyzing recommendation needs, enabling intelligent attraction discovery with recommendations.""")
 
     if st.button("Extract and Manage Email Features", type="primary"):
+        # Clear previous extraction results immediately and forcefully
+        # Use a flag to track if we're processing a new extraction
+        st.session_state['_extraction_in_progress'] = True
+        
+        # Completely remove old results
+        keys_to_clear = ['spotify_result', 'attraction_display_data', 'attraction_reco_data', 'calendar_event_created']
+        for key in keys_to_clear:
+            if key in st.session_state:
+                del st.session_state[key]
+        
         st.session_state['received_email_index'] = idx_display
         subject = st.session_state.get("subject_area", "")
         body = st.session_state.get("body_area", "")
@@ -533,38 +559,30 @@ with colA:
                         if response_data.get("attractions"):
                             attractions_data = response_data["attractions"]
                             if attractions_data.get("success"):
-                                subj = st.session_state.get("subject_area", "")
-                                bod = st.session_state.get("body_area", "")
-                                feats = response_data.get("features") or st.session_state.get('email_features')
-                                mention = extract_explicit_location(subj, bod, feats)
-
+                                # Ensure previous data is cleared (should already be cleared, but double-check)
+                                st.session_state.pop('attraction_display_data', None)
+                                st.session_state.pop('attraction_reco_data', None)
+                                
                                 dat = attractions_data.get("data", {})
-                                direct_list = dat.get("direct_match") or dat.get("attractions") or []
-                                rec_list = dat.get("recommendations") or []
+                                # Multi-Agent mode: directly use backend's direct_match (from Single Agent code)
+                                direct_list = dat.get("direct_match", [])
+                                rec_list = dat.get("recommendations", [])
 
-                                matched = []
-                                others = []
-                                if mention:
-                                    for it in direct_list:
-                                        loc = str(it.get("location", ""))
-                                        name = str(it.get("name", ""))
-                                        if mention.lower() in loc.lower() or mention.lower() in name.lower():
-                                            matched.append(it)
-                                        else:
-                                            others.append(it)
-                                else:
-                                    matched = direct_list
-
-                                st.session_state['attraction_display_data'] = {
-                                    "direct_match": matched,
-                                    "recommendations": []
-                                }
-                                # 猜你喜欢 = 未匹配的 direct + recommendations
-                                limited_recos = (others + rec_list)[:5]
-                                st.session_state['attraction_reco_data'] = {
-                                    "direct_match": limited_recos,
-                                    "recommendations": []
-                                }
+                                # Set mentioned location data (direct_match from backend - already processed by Single Agent)
+                                if direct_list:
+                                    st.session_state['attraction_display_data'] = {
+                                        "direct_match": direct_list,  # Use backend's direct_match directly
+                                        "recommendations": []
+                                    }
+                                
+                                # Set recommendation data (限制为3个)
+                                if rec_list:
+                                    limited_recos = rec_list[:3]  # Limit to 3 recommendations
+                                    st.session_state['attraction_reco_data'] = {
+                                        "direct_match": [],  # 推荐部分不使用 direct_match
+                                        "recommendations": limited_recos  # 推荐放在 recommendations 中
+                                    }
+                                # If no recommendations, don't set attraction_reco_data at all
                         
                         # Display features if available
                         if response_data.get("features"):
@@ -590,14 +608,26 @@ with colA:
                             else:
                                 # Process all function results (can be multiple functions)
                                 if isinstance(function_result, list):
-                                    # Single Agent：仅保留一个输出 —— 只返回邮件中直接提及的 location（构造 Google Maps 首条）
-                                    shown_once = False
+                                    # Single Agent: Process each function result appropriately
                                     for func_result in function_result:
-                                        if shown_once:
-                                            break
                                         function_name = func_result.get("function_name", "")
 
-                                        if function_name == "attraction_discovery":
+                                        if function_name == "spotify_link_discovery":
+                                            # Clear previous Spotify result before setting new one
+                                            if 'spotify_result' in st.session_state:
+                                                del st.session_state['spotify_result']
+                                            # Display Spotify links
+                                            if func_result.get("success") and func_result.get("data", {}).get("songs"):
+                                                st.session_state['spotify_result'] = func_result
+                                                st.success("🎵 Spotify links found!")
+                                        
+                                        elif function_name == "attraction_discovery":
+                                            # Clear previous attraction data before setting new data
+                                            if 'attraction_display_data' in st.session_state:
+                                                del st.session_state['attraction_display_data']
+                                            if 'attraction_reco_data' in st.session_state:
+                                                del st.session_state['attraction_reco_data']
+                                            
                                             # 从邮件中抽取直接提及的地点；仅返回该地点，并给出 Google Maps 搜索链接
                                             subj = st.session_state.get("subject_area", "")
                                             bod = st.session_state.get("body_area", "")
@@ -617,10 +647,11 @@ with colA:
                                                 }]
                                             # 如果没有解析到明确地点，则清空（Single Agent 不展示其他）
                                             st.session_state['attraction_display_data'] = render_data
-                                            shown_once = True
-                                        else:
-                                            # Single Agent 其余功能输出（如 create_event / spotify）在该模式下不显示
-                                            continue
+                                        
+                                        elif function_name == "create_event":
+                                            # Calendar event created - can show success message
+                                            if func_result.get("success"):
+                                                st.session_state['calendar_event_created'] = True
                                 else:
                                     st.info("ℹ️ No functions were executed")
                         else:
@@ -629,6 +660,9 @@ with colA:
                     st.warning(f"⚠️ Email processing failed: {api_response.get('message', 'Unknown error')}")
             else:
                 st.error("❌ Failed to process email via backend API")
+        
+        # Mark extraction as complete
+        st.session_state['_extraction_in_progress'] = False
 
 with colB:
     st.subheader("Email Content")
@@ -648,22 +682,64 @@ with colB:
     st.markdown("**Body:**")
     st.text_area("", body, key="body_area", height=300)
 
-    # 在 Email 内容下方展示地点候选/景点结果（右栏更宽）
-    if 'attraction_display_data' in st.session_state and st.session_state['attraction_display_data']:
-        st.markdown("---")
-        display_attraction_results(
-            st.session_state['attraction_display_data'],
-            auto_open=st.session_state.get('auto_open_maps', False),
-            direct_header="📍 Mentioned Location"
-        )
-    if 'attraction_reco_data' in st.session_state and st.session_state['attraction_reco_data']:
-        if st.session_state['attraction_reco_data'].get('direct_match') or st.session_state['attraction_reco_data'].get('recommendations'):
+    # 在 Email 内容下方展示结果（右栏更宽）
+    # Display Spotify results first (if available and not None)
+    # Only display if extraction is not in progress (to avoid showing old data)
+    if not st.session_state.get('_extraction_in_progress', False):
+        spotify_result = st.session_state.get('spotify_result')
+        if spotify_result and spotify_result is not None:
             st.markdown("---")
-            display_attraction_results(
-                st.session_state['attraction_reco_data'],
-                auto_open=st.session_state.get('auto_open_maps', False),
-                rec_header="🌟 You Might Like"
-            )
+            st.subheader("🎵 Spotify Links")
+            display_spotify_results(spotify_result)
+    
+    # Display attraction results (only if not None and has data)
+    # Only display if extraction is not in progress (to avoid showing old data)
+    if not st.session_state.get('_extraction_in_progress', False):
+        attraction_display = st.session_state.get('attraction_display_data')
+        attraction_reco = st.session_state.get('attraction_reco_data')
+        
+        # Calculate total count for display
+        direct_count = len(attraction_display.get('direct_match', [])) if attraction_display else 0
+        reco_count = len(attraction_reco.get('recommendations', [])) if attraction_reco else 0
+        total_attractions = direct_count + reco_count
+        
+        # Show total count only once if we have any attractions
+        if total_attractions > 0:
+            st.success(f"🎭 Found {total_attractions} attraction(s)!")
+        
+        # Display direct match attractions
+        if attraction_display and attraction_display is not None:
+            direct_match = attraction_display.get('direct_match', [])
+            if direct_match:
+                st.markdown("---")
+                display_attraction_results(
+                    attraction_display,
+                    auto_open=st.session_state.get('auto_open_maps', False),
+                    direct_header="📍 Mentioned Location",
+                    show_count=False  # Don't show count again, we already showed it above
+                )
+        
+        # Display recommended attractions
+        if attraction_reco and attraction_reco is not None:
+            reco_direct = attraction_reco.get('direct_match', [])
+            reco_recs = attraction_reco.get('recommendations', [])
+            # 只显示推荐部分（recommendations），限制为3个
+            if reco_recs:
+                # 确保只显示3个推荐
+                limited_reco_recs = reco_recs[:3]
+                if limited_reco_recs:
+                    st.markdown("---")
+                    # 创建一个只包含推荐的数据结构
+                    reco_data_to_display = {
+                        "direct_match": [],
+                        "recommendations": limited_reco_recs
+                    }
+                    display_attraction_results(
+                        reco_data_to_display,
+                        auto_open=st.session_state.get('auto_open_maps', False),
+                        rec_header="🌟 You Might Like",
+                        show_count=False  # Don't show count again, we already showed it above
+                    )
 
 st.divider()
 st.subheader("Extracted Features")

@@ -287,12 +287,14 @@ class TimeoutException(Exception):
     pass
 
 
-def process_email_to_calendar(email_features: EmailFeatures, timeout_seconds: int = 30) -> dict:
+def process_email_to_calendar(email_features: EmailFeatures, timeout_seconds: int = 120) -> dict:
     """Processes an email through three CrewAI agents with soft timeout."""
+    start_time = time.time()  # Set start time once at the beginning
+    
     def check_timeout():
-        start_time = time.time()
-        if time.time() - start_time > timeout_seconds:
-            raise TimeoutException(f"Processing timed out after {timeout_seconds}s")
+        elapsed = time.time() - start_time
+        if elapsed > timeout_seconds:
+            raise TimeoutException(f"Processing timed out after {timeout_seconds}s (elapsed: {elapsed:.1f}s)")
 
     try:
         # Task 1 — Classification

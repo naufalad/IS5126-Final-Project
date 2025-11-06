@@ -277,10 +277,17 @@ async def extract(req: EmailRequest):
 @app.post("/create")
 async def create(req: EmailRequest):
     """Create calendar event from email and handle Spotify/attractions if needed (Multi-Agent)"""
+    import time
+    start_time = time.time()
+    
     try:
+        print(f"📧 Processing email via create endpoint (Multi-Agent)...")
         full_text = f"Subject: {req.subject}\n\nBody: {req.body}" if req.subject else req.body
+        print(f"⏱️ Step 1: Extracting email features...")
         features = extract_email_features(full_text)
         features.category = req.category or features.category
+        elapsed = time.time() - start_time
+        print(f"✅ Features extracted in {elapsed:.2f}s")
         
         # Initialize response structure
         result = {
@@ -300,7 +307,11 @@ async def create(req: EmailRequest):
         has_travel_content = any(keyword in email_text_lower for keyword in travel_keywords)
         
         # Process calendar event (multi-agent)
+        print(f"⏱️ Step 2: Processing calendar event (Multi-Agent)...")
+        calendar_start = time.time()
         calendar_response = process_email_to_calendar(features)
+        calendar_elapsed = time.time() - calendar_start
+        print(f"✅ Calendar processing completed in {calendar_elapsed:.2f}s")
         if calendar_response and calendar_response.get("calendar_event"):
             result["calendar_event"] = calendar_response
         
@@ -347,28 +358,54 @@ async def create(req: EmailRequest):
                     "message": f"Attraction discovery failed: {str(e)}"
                 }
         
+        total_elapsed = time.time() - start_time
+        print(f"✅ Multi-Agent processing completed in {total_elapsed:.2f}s")
         return {
             "success": True,
-            "data": result
+            "data": result,
+            "_processing_time": round(total_elapsed, 2)
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        elapsed = time.time() - start_time
+        error_msg = f"Error after {elapsed:.2f}s: {str(e)}"
+        print(f"❌ {error_msg}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=error_msg)
 
 
 @app.post("/function_call")
 async def function_call_endpoint(req: EmailRequest):
     """Process email and execute appropriate function"""
+    import time
+    start_time = time.time()
+    
     try:
+        print(f"📧 Processing email via function_call endpoint...")
         full_text = f"Subject: {req.subject}\n\nBody: {req.body}" if req.subject else req.body
+        print(f"⏱️ Step 1: Extracting email features...")
         features = extract_email_features(full_text)
+        elapsed = time.time() - start_time
+        print(f"✅ Features extracted in {elapsed:.2f}s")
+        
+        print(f"⏱️ Step 2: Calling functions...")
         response = function_calling(features, full_text)
+        total_elapsed = time.time() - start_time
+        print(f"✅ Function calling completed in {total_elapsed:.2f}s")
+        
         return {
             "success": True,
             "features": features.model_dump(),
-            "function_result": response
+            "function_result": response,
+            "_processing_time": round(total_elapsed, 2)
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        elapsed = time.time() - start_time
+        error_msg = f"Error after {elapsed:.2f}s: {str(e)}"
+        print(f"❌ {error_msg}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=error_msg)
 
 
 @app.get("/data/emails")

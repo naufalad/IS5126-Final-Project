@@ -7,135 +7,276 @@ Two agents:
 import os
 import json
 import time
-from typing import Dict, Any
+from typing import Dict, Any, List
 from crewai import Agent, Task, Crew, LLM
 from dotenv import load_dotenv
+from openai import OpenAI
 from classes.EmailFeatures import EmailFeatures
 
 load_dotenv()
 
 OPENAI_MODEL_NAME = "gpt-4o-mini"
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-crewai_llm = LLM(
-    model=f"openai/{OPENAI_MODEL_NAME}",
-    temperature=0.1,
-    max_tokens=1500
-)
+# Lazy initialization for OpenAI client
+_openai_client = None
+
+def get_openai_client():
+    """Get or create OpenAI client instance (lazy initialization)"""
+    global _openai_client
+    if _openai_client is None:
+        if not OPENAI_API_KEY:
+            raise ValueError("OPENAI_API_KEY must be set in environment variables")
+        _openai_client = OpenAI(api_key=OPENAI_API_KEY)
+    return _openai_client
+
+# Lazy initialization for CrewAI LLM
+_crewai_llm = None
+
+def get_crewai_llm():
+    """Get or create CrewAI LLM instance (lazy initialization)"""
+    global _crewai_llm
+    if _crewai_llm is None:
+        _crewai_llm = LLM(
+            model=f"openai/{OPENAI_MODEL_NAME}",
+            temperature=0.1,
+            max_tokens=1000  # Reduced from 1500 for faster responses
+        )
+    return _crewai_llm
+
+
+# ============================================================================
+# LOCATION EXTRACTION FROM EMAIL
+# ============================================================================
+
+def extract_mentioned_locations_from_email(email_text: str) -> List[str]:
+    """
+    Extract explicitly mentioned locations from email text using OpenAI.
+    Returns a list of location names that are explicitly mentioned in the email.
+    """
+    prompt = f"""Extract ALL locations that are EXPLICITLY MENTIONED in the following email.
+
+Email:
+{email_text}
+
+Your task:
+1. Identify ALL locations (cities, places, attractions, addresses) that are EXPLICITLY mentioned in the email
+2. Return ONLY locations that are clearly stated in the email text
+3. DO NOT infer or guess locations - only extract what is explicitly written
+4. If a location is mentioned with quotes like "Marina Bay Sands, Singapore", extract it as "Marina Bay Sands, Singapore" (keep the FULL name, do NOT split it)
+5. DO NOT split composite locations - if email mentions "Marina Bay Sands, Singapore", return it as one location "Marina Bay Sands, Singapore", NOT as separate "Marina Bay Sands" and "Singapore"
+6. If multiple locations are mentioned, extract all of them
+7. Return locations in the EXACT format as they appear in the email
+
+CRITICAL RULES:
+- Keep composite locations as ONE entry (e.g., "Marina Bay Sands, Singapore" stays as one location)
+- DO NOT split locations by commas if they are part of a single location name
+- DO NOT extract broader locations if a specific location is mentioned (e.g., if "Marina Bay Sands, Singapore" is mentioned, do NOT also extract "Singapore")
+- Only extract what is EXPLICITLY written in the email
+
+EXAMPLE:
+Email: 'The location I'm thinking about is "Marina Bay Sands, Singapore".'
+CORRECT: ["Marina Bay Sands, Singapore"]
+WRONG: ["Marina Bay Sands, Singapore", "Singapore"] or ["Marina Bay Sands", "Singapore"]
+
+Return ONLY a valid JSON array of location strings. No explanations, no markdown.
+Example format:
+["Location 1", "Location 2", "Location 3"]
+
+If no locations are mentioned, return an empty array: []
+"""
+
+    try:
+        client = get_openai_client()
+        response = client.chat.completions.create(
+            model=OPENAI_MODEL_NAME,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0,
+            max_tokens=200
+        )
+        content = response.choices[0].message.content.strip()
+        
+        # Clean up markdown code blocks
+        if content.startswith("```"):
+            content = content.strip("`")
+            if content.startswith("json"):
+                content = content[4:].strip()
+            if content.endswith("```"):
+                content = content[:-3].strip()
+        
+        locations = json.loads(content)
+        if not isinstance(locations, list):
+            locations = [locations] if locations else []
+        
+        # Filter out empty strings and normalize
+        locations = [loc.strip() for loc in locations if loc and loc.strip()]
+        
+        print(f"📍 Extracted mentioned locations from email: {locations}")
+        return locations
+        
+    except Exception as e:
+        print(f"⚠️ Error extracting locations from email: {e}")
+        # Fallback: return empty list
+        return []
 
 # ============================================================================
 # AGENT DEFINITIONS
 # ============================================================================
 
-extractor_agent = Agent(
-    role="Attraction Extractor",
-    goal="Extract attractions directly related to the location mentioned in the email",
-    backstory="Expert at finding tourist attractions and points of interest for specific locations. You provide accurate information about attractions at the mentioned location.",
-    verbose=False,
-    allow_delegation=True,
-    llm=crewai_llm,
-)
+def get_extractor_agent():
+    """Get or create extractor agent (lazy initialization)"""
+    return Agent(
+        role="Attraction Extractor",
+        goal="Extract attractions ONLY for locations that are EXPLICITLY MENTIONED in the email text. Do not infer or add locations that are not mentioned.",
+        backstory="Expert at finding tourist attractions for locations. You are very strict about only extracting attractions for locations that are explicitly stated in the email. You never add locations that are not mentioned, even if they are related or nearby. You always verify that a location appears in the email text before extracting attractions for it.",
+        verbose=False,
+        allow_delegation=False,  # Disabled delegation for faster processing
+        llm=get_crewai_llm(),
+    )
 
-recommendation_agent = Agent(
-    role="Recommendation Analyzer",
-    goal="Analyze email intent and determine if additional attraction recommendations are needed",
-    backstory="Expert at understanding user intent from emails. You can determine if someone wants additional recommendations beyond the mentioned location. If recommendations are needed, you generate 5 additional location suggestions.",
-    verbose=False,
-    allow_delegation=False,
-    llm=crewai_llm,
-)
+def get_recommendation_agent():
+    """Get or create recommendation agent (lazy initialization)"""
+    return Agent(
+        role="Location Recommendation Generator",
+        goal="Generate 3 related location recommendations based on email content",
+        backstory="Expert at understanding travel context and generating relevant location recommendations. You analyze email content and suggest 3 related locations that would be interesting for the user.",
+        verbose=False,
+        allow_delegation=False,
+        llm=get_crewai_llm(),
+    )
 
 # ============================================================================
 # TASK DEFINITIONS
 # ============================================================================
 
-def create_extraction_task(location: str, email_text: str) -> Task:
-    """Create task for extracting direct match attractions"""
+def create_extraction_task(locations: list, email_text: str) -> Task:
+    """Create task for extracting direct match attractions for mentioned locations"""
+    locations_str = ", ".join(locations)
+    # Limit: If multiple locations, return 1-2 per location, max 3 total
+    # If single location, return max 3 attractions
+    max_attractions = 3 if len(locations) == 1 else min(3, len(locations) * 2)
+    
     return Task(
         description=f"""
-        Extract tourist attractions for the location: {location}
+        CRITICAL REQUIREMENT: Extract tourist attractions ONLY for locations that are EXPLICITLY MENTIONED in the email.
         
-        Email context: {email_text[:500]}
+        Locations explicitly mentioned in the email: {locations_str}
+        
+        Email context: {email_text[:800]}
+        
+        EXAMPLE - CORRECT BEHAVIOR:
+        Email: "I'm planning to visit some attractions this weekend. The location I'm thinking about is 'Marina Bay Sands, Singapore'. Could you help find some nearby attractions and show me the Google Maps directions? Looking for iconic spots and a short description for each. Thanks!"
+        
+        CORRECT Response: Extract attractions ONLY for "Marina Bay Sands, Singapore" because this is the ONLY location explicitly mentioned in the email.
+        WRONG Response: Do NOT extract attractions for "Singapore" separately, or "Marina Bay", or any other location that is not explicitly stated.
         
         Your task:
-        1. Find 3 top attractions directly related to "{location}"
-        2. For each attraction, provide:
+        1. Carefully read the email text above and identify which locations from the list "{locations_str}" are ACTUALLY MENTIONED in the email
+        2. For EACH location that is EXPLICITLY MENTIONED in the email text, find its top attractions
+        3. DO NOT include locations that are NOT mentioned in the email, even if:
+           - They are related or nearby to mentioned locations
+           - They are part of a larger area (e.g., if email mentions "Marina Bay Sands, Singapore", do NOT extract for "Singapore" separately)
+           - They are commonly associated with the mentioned location
+        4. DO NOT infer or guess locations - only use locations that are clearly stated in the email text
+        5. If the email mentions a specific place like "Marina Bay Sands, Singapore", extract attractions for that specific place, NOT for the broader location "Singapore"
+        6. If multiple locations are mentioned, extract 1-2 attractions per location
+        7. Return EXACTLY {max_attractions} attractions total (prioritize the most important/popular ones)
+        8. For each attraction, provide:
            - name: Full name of the attraction
            - description: Short description (2-3 sentences)
            - fun_fact: An interesting fact about the attraction
-           - map_link: Google Maps search URL (format: https://www.google.com/maps/search/<attraction_name>+{location.replace(' ', '+')})
+           - location: The EXACT location name as mentioned in the email (use the same spelling/format)
         
-        Return ONLY a valid JSON array with this structure:
+        Note: Google Maps links will be generated automatically, you don't need to provide them.
+        
+        Return ONLY a valid JSON array with EXACTLY {max_attractions} attractions:
         [
             {{
                 "name": "Attraction Name",
                 "description": "Description here",
                 "fun_fact": "Fun fact here",
-                "map_link": "https://www.google.com/maps/search/..."
+                "location": "Exact location name from email"
             }}
         ]
+        
+        STRICT RULES:
+        - ONLY extract attractions for locations that appear EXPLICITLY in the email text
+        - DO NOT add locations that are not mentioned, even if they are related or nearby
+        - If email mentions "Marina Bay Sands, Singapore", extract ONLY for "Marina Bay Sands, Singapore", NOT for "Singapore" separately
+        - Use the EXACT location name as it appears in the email (same spelling, same format)
+        - Return EXACTLY {max_attractions} attractions, no more, no less
+        - If a location is not mentioned in the email, do NOT include attractions for it
+        - Verify each location appears in the email text before extracting attractions for it
         """,
-        agent=extractor_agent,
-        expected_output="JSON array of attractions with name, description, fun_fact, map_link"
+        agent=get_extractor_agent(),
+        expected_output=f"JSON array with exactly {max_attractions} attractions for locations explicitly mentioned in the email"
     )
 
 
-def create_recommendation_task(location: str, email_text: str, direct_attractions: list) -> Task:
-    """Create task for determining if recommendations are needed and generating them"""
-    attractions_summary = ", ".join([a.get("name", "") for a in direct_attractions[:3]])
+def create_recommendation_location_task(email_text: str, mentioned_locations: list) -> Task:
+    """Create task for generating 3 recommended locations based on email content"""
+    mentioned_str = ", ".join(mentioned_locations) if mentioned_locations else "None"
     
     return Task(
         description=f"""
-        Analyze this email and determine if the user wants additional attraction recommendations.
+        Analyze this email and generate 3 location recommendations based on the email content.
         
         Email: {email_text[:500]}
-        Mentioned location: {location}
-        Already found attractions: {attractions_summary}
+        Mentioned locations in email: {mentioned_str}
         
         Your task:
-        1. Determine if the email requests recommendations (keywords: recommend, suggest, help find, nearby, other, more, etc.)
-        2. If YES, generate 5 additional location names that are related to or near "{location}"
-        3. If NO, return empty list
+        1. Analyze the email content to understand the travel context, interests, or purpose
+        2. Generate EXACTLY 3 location names that are related, nearby, or would be interesting based on the email
+        3. These should be different from the mentioned locations
+        4. Consider the travel theme, interests, or context mentioned in the email
         
-        Return ONLY a valid JSON object with this structure:
-        {{
-            "needs_recommendations": true/false,
-            "reasoning": "Brief explanation",
-            "recommended_locations": ["Location 1", "Location 2", ...] (max 5, only if needs_recommendations is true)
-        }}
+        Return ONLY a valid JSON array with EXACTLY 3 location names:
+        ["Location 1", "Location 2", "Location 3"]
+        
+        Examples:
+        - If email mentions "Singapore", you might recommend: ["Malaysia", "Thailand", "Indonesia"]
+        - If email mentions "Paris", you might recommend: ["Lyon", "Nice", "Marseille"]
+        - If email mentions "Tokyo", you might recommend: ["Kyoto", "Osaka", "Yokohama"]
         """,
-        agent=recommendation_agent,
-        expected_output="JSON object with needs_recommendations boolean and recommended_locations array"
+        agent=get_recommendation_agent(),
+        expected_output="JSON array with exactly 3 location names"
     )
 
 
-def create_recommendation_extraction_task(recommended_locations: list, original_location: str) -> Task:
-    """Create task for extracting attractions from recommended locations"""
+def create_recommendation_extraction_task(recommended_locations: list) -> Task:
+    """Create task for extracting attractions from recommended locations - one attraction per location"""
     locations_str = ", ".join(recommended_locations)
     
     return Task(
         description=f"""
-        Extract attractions for these recommended locations: {locations_str}
-        
-        Original location context: {original_location}
+        Extract EXACTLY ONE top attraction for each of these recommended locations: {locations_str}
         
         Your task:
-        For each recommended location, find 1-2 top attractions. Total should be around 5 attractions.
+        - For EACH location, find the MOST POPULAR or MOST INTERESTING attraction
+        - Return EXACTLY 3 attractions (one per location)
+        - For each attraction, provide:
+           - name: Full name of the attraction
+           - description: Short description (2-3 sentences)
+           - fun_fact: An interesting fact about the attraction
+           - location: The location name this attraction belongs to
         
-        Return ONLY a valid JSON array with this structure:
+        Note: Google Maps links will be generated automatically, you don't need to provide them.
+        
+        Return ONLY a valid JSON array with EXACTLY 3 attractions:
         [
             {{
                 "name": "Attraction Name",
                 "description": "Description here",
                 "fun_fact": "Fun fact here",
-                "map_link": "https://www.google.com/maps/search/...",
                 "location": "Location name"
-            }}
+            }},
+            ...
         ]
         
-        Ensure variety - avoid duplicates. Focus on diverse, interesting attractions.
+        IMPORTANT: Return exactly 3 attractions, one for each recommended location.
         """,
-        agent=extractor_agent,
-        expected_output="JSON array of recommended attractions"
+        agent=get_extractor_agent(),
+        expected_output="JSON array with exactly 3 attractions, one per recommended location"
     )
 
 
@@ -143,19 +284,43 @@ def create_recommendation_extraction_task(recommended_locations: list, original_
 # MULTI-AGENT PROCESSOR
 # ============================================================================
 
-def process_attraction_discovery_multi_agent(email_features: EmailFeatures, email_text: str, timeout_seconds: int = 60) -> Dict[str, Any]:
+def process_attraction_discovery_multi_agent(email_features: EmailFeatures, email_text: str, timeout_seconds: int = 90) -> Dict[str, Any]:
     """
     Process attraction discovery using multiple agents.
     
-    Flow:
-    1. Extractor Agent: Extract direct match attractions (3 attractions)
-    2. Recommendation Agent: Determine if recommendations needed
-    3. If needed: Extractor Agent: Extract attractions from recommended locations (5 attractions)
+    New Flow:
+    1. Agent 1 (Extractor): Extract attractions for ALL locations mentioned in the email
+    2. Agent 2 (Recommendation): Generate 3 recommended locations based on email content
+    3. Agent 1 (Extractor): Extract 1 attraction per recommended location (total 3)
     """
+    start_time = time.time()
+    
+    def check_timeout():
+        elapsed = time.time() - start_time
+        if elapsed > timeout_seconds:
+            raise TimeoutError(f"Attraction discovery timed out after {timeout_seconds}s")
+    
     try:
-        location = email_features.location or "Unknown Location"
+        # Extract mentioned locations from email using OpenAI
+        print("🔍 Extracting mentioned locations from email text...")
+        mentioned_locations = extract_mentioned_locations_from_email(email_text)
         
-        if not location or location == "Unknown Location":
+        # If no locations found, try fallback to email_features.location
+        if not mentioned_locations:
+            if email_features.location and email_features.location != "Unknown Location":
+                # Split by common separators if multiple locations are in one string
+                location_str = email_features.location
+                import re
+                locations = re.split(r'[,;]|\s+and\s+|\s+&\s+', location_str)
+                mentioned_locations = [loc.strip() for loc in locations if loc.strip()]
+        
+        # Final fallback
+        if not mentioned_locations:
+            location = email_features.location or "Unknown Location"
+            if location and location != "Unknown Location":
+                mentioned_locations = [location]
+        
+        if not mentioned_locations or (len(mentioned_locations) == 1 and mentioned_locations[0] == "Unknown Location"):
             return {
                 "message": "No location provided. Cannot discover attractions.",
                 "success": False,
@@ -165,54 +330,140 @@ def process_attraction_discovery_multi_agent(email_features: EmailFeatures, emai
                 }
             }
         
-        print(f"🎭 Multi-Agent: Starting attraction discovery for {location}")
+        print(f"🎭 Multi-Agent: Starting attraction discovery for mentioned locations: {mentioned_locations} (timeout: {timeout_seconds}s)")
         
-        # Step 1: Extract direct match attractions
-        print("🤖 Agent 1: Extracting direct match attractions...")
-        extraction_task = create_extraction_task(location, email_text)
-        extraction_result = Crew(
-            agents=[extractor_agent],
-            tasks=[extraction_task],
-            verbose=False
-        ).kickoff()
+        # Step 1: Extract attractions for explicitly mentioned locations using OpenAI directly
+        check_timeout()
+        print(f"🔍 Extracting attractions for explicitly mentioned locations: {mentioned_locations}...")
+        step1_start = time.time()
         
-        # Parse extraction result
-        extraction_str = str(extraction_result)
-        if "```json" in extraction_str:
-            extraction_str = extraction_str.split("```json")[1].split("```")[0].strip()
-        elif "```" in extraction_str:
-            extraction_str = extraction_str.split("```")[1].split("```")[0].strip()
-        
-        try:
-            direct_attractions = json.loads(extraction_str)
-            if not isinstance(direct_attractions, list):
-                direct_attractions = []
-        except json.JSONDecodeError:
-            print(f"⚠️ Failed to parse extraction result: {extraction_str[:200]}")
-            direct_attractions = []
-        
-        # Format direct match attractions
+        # Extract attractions for mentioned locations using OpenAI (not Single Agent code)
         direct_match = []
-        for attr in direct_attractions[:3]:  # Limit to 3
-            direct_match.append({
-                "name": attr.get("name", "Unknown Attraction"),
-                "location": location,
-                "type": "general",
-                "description": attr.get("description", ""),
-                "map_link": attr.get("map_link", ""),
-                "fun_fact": attr.get("fun_fact", "")
-            })
+        max_direct = 3  # Limit direct match to 3 attractions total
         
-        print(f"✅ Agent 1: Found {len(direct_match)} direct match attraction(s)")
+        # Create a prompt to get attractions for the mentioned locations
+        locations_str = ", ".join([f'"{loc}"' for loc in mentioned_locations])
+        prompt = f"""CRITICAL REQUIREMENT: Extract tourist attractions ONLY for the EXACT locations that are EXPLICITLY MENTIONED in the email.
+
+Email text:
+{email_text[:1000]}
+
+Locations EXPLICITLY MENTIONED in the email (extracted from email text): {locations_str}
+
+Your task:
+1. Verify that each location in the list {locations_str} is ACTUALLY MENTIONED in the email text above
+2. For EACH location in the list, find its top attractions
+3. DO NOT extract attractions for locations that are NOT in the list, even if they are:
+   - Part of a larger area (e.g., if list has "Marina Bay Sands, Singapore", do NOT extract for "Singapore" separately)
+   - Related or nearby to mentioned locations
+   - Commonly associated with the mentioned location
+4. DO NOT split composite locations - if the list has "Marina Bay Sands, Singapore", treat it as ONE location, not as "Marina Bay Sands" and "Singapore"
+5. Return EXACTLY {max_direct} attractions total (prioritize the most important/popular ones)
+6. For each attraction, provide:
+   - name: Full name of the attraction
+   - description: Short description (2-3 sentences)
+   - fun_fact: One interesting fact about the attraction
+   - location: The EXACT location name from the list (use the same format: {locations_str})
+
+EXAMPLE:
+Email: "I'm planning to visit some attractions this weekend. The location I'm thinking about is 'Marina Bay Sands, Singapore'."
+Mentioned locations: ["Marina Bay Sands, Singapore"]
+CORRECT: Extract attractions ONLY for "Marina Bay Sands, Singapore" (treat it as one location)
+WRONG: 
+- Do NOT extract for "Singapore" separately
+- Do NOT extract for "Marina Bay" separately
+- Do NOT extract for any other location not in the list
+
+Return ONLY a valid JSON array with EXACTLY {max_direct} attractions:
+[
+    {{
+        "name": "Attraction Name",
+        "description": "Description here",
+        "fun_fact": "Fun fact here",
+        "location": "Exact location name from the list (e.g., 'Marina Bay Sands, Singapore')"
+    }}
+]
+
+STRICT RULES:
+- ONLY extract attractions for locations in the list: {locations_str}
+- DO NOT split composite locations (e.g., "Marina Bay Sands, Singapore" is ONE location, not two)
+- DO NOT extract for broader locations if a specific location is mentioned (e.g., if "Marina Bay Sands, Singapore" is in the list, do NOT extract for "Singapore")
+- Use the EXACT location name from the list (same spelling, same format)
+- Return EXACTLY {max_direct} attractions, no more, no less
+- Each attraction's location field must match EXACTLY one of the locations in the list
+"""
+
+        try:
+            client = get_openai_client()
+            response = client.chat.completions.create(
+                model=OPENAI_MODEL_NAME,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0,
+                max_tokens=800
+            )
+            content = response.choices[0].message.content.strip()
+            
+            # Clean up markdown code blocks
+            if content.startswith("```"):
+                content = content.strip("`")
+                if content.startswith("json"):
+                    content = content[4:].strip()
+                if content.endswith("```"):
+                    content = content[:-3].strip()
+            
+            attractions_data = json.loads(content)
+            if not isinstance(attractions_data, list):
+                attractions_data = [attractions_data] if attractions_data else []
+            
+            # Format direct match attractions (limit to 3 total)
+            for attr in attractions_data[:max_direct]:
+                attr_name = attr.get("name", "Unknown Attraction")
+                attr_location = attr.get("location", mentioned_locations[0] if mentioned_locations else "Unknown")
+                
+                # Generate Google Maps link
+                search_query = f"{attr_name.replace(' ', '+')}+{attr_location.replace(' ', '+')}"
+                map_link = f"https://www.google.com/maps/search/{search_query}"
+                
+                direct_match.append({
+                    "name": attr_name,
+                    "location": attr_location,
+                    "type": "general",
+                    "description": attr.get("description", ""),
+                    "map_link": map_link,
+                    "fun_fact": attr.get("fun_fact", "")
+                })
+            
+        except Exception as e:
+            print(f"⚠️ Error extracting attractions for mentioned locations: {e}")
+            # If extraction fails, create simple entries for the mentioned locations
+            for location in mentioned_locations[:max_direct]:
+                search_query = location.replace(' ', '+')
+                map_link = f"https://www.google.com/maps/search/{search_query}"
+                direct_match.append({
+                    "name": location,
+                    "location": location,
+                    "type": "place",
+                    "description": f"Location mentioned in the email: {location}",
+                    "map_link": map_link,
+                    "fun_fact": ""
+                })
         
-        # Step 2: Determine if recommendations are needed
-        print("🤖 Agent 2: Analyzing recommendation needs...")
-        recommendation_task = create_recommendation_task(location, email_text, direct_match)
+        step1_elapsed = time.time() - step1_start
+        print(f"✅ Attraction extraction completed in {step1_elapsed:.2f}s")
+        print(f"✅ Found {len(direct_match)} attraction(s) for mentioned locations: {mentioned_locations}")
+        
+        # Step 2: Agent 2 - Generate 3 recommended locations
+        check_timeout()
+        print("🤖 Agent 2: Generating 3 recommended locations...")
+        step2_start = time.time()
+        recommendation_location_task = create_recommendation_location_task(email_text, mentioned_locations)
         recommendation_result = Crew(
-            agents=[recommendation_agent],
-            tasks=[recommendation_task],
+            agents=[get_recommendation_agent()],
+            tasks=[recommendation_location_task],
             verbose=False
         ).kickoff()
+        step2_elapsed = time.time() - step2_start
+        print(f"✅ Agent 2 completed in {step2_elapsed:.2f}s")
         
         # Parse recommendation result
         recommendation_str = str(recommendation_result)
@@ -222,26 +473,31 @@ def process_attraction_discovery_multi_agent(email_features: EmailFeatures, emai
             recommendation_str = recommendation_str.split("```")[1].split("```")[0].strip()
         
         try:
-            recommendation_analysis = json.loads(recommendation_str)
-            needs_recommendations = recommendation_analysis.get("needs_recommendations", False)
-            recommended_locations = recommendation_analysis.get("recommended_locations", [])
+            recommended_locations = json.loads(recommendation_str)
+            if not isinstance(recommended_locations, list):
+                recommended_locations = []
+            # Ensure we have exactly 3 locations
+            recommended_locations = recommended_locations[:3]
         except json.JSONDecodeError:
-            print(f"⚠️ Failed to parse recommendation analysis: {recommendation_str[:200]}")
-            needs_recommendations = False
+            print(f"⚠️ Failed to parse recommendation locations: {recommendation_str[:200]}")
             recommended_locations = []
         
-        print(f"✅ Agent 2: Recommendations needed: {needs_recommendations}")
+        print(f"✅ Agent 2: Generated {len(recommended_locations)} recommended location(s): {recommended_locations}")
         
-        # Step 3: Extract recommended attractions if needed
+        # Step 3: Agent 1 - Extract 1 attraction per recommended location (total 3)
         recommendations = []
-        if needs_recommendations and recommended_locations:
-            print(f"🤖 Agent 1: Extracting attractions from {len(recommended_locations)} recommended locations...")
-            recommendation_extraction_task = create_recommendation_extraction_task(recommended_locations, location)
+        if recommended_locations:
+            check_timeout()
+            print(f"🤖 Agent 1: Extracting 1 attraction per recommended location (total {len(recommended_locations)})...")
+            step3_start = time.time()
+            recommendation_extraction_task = create_recommendation_extraction_task(recommended_locations)
             rec_extraction_result = Crew(
-                agents=[extractor_agent],
+                agents=[get_extractor_agent()],
                 tasks=[recommendation_extraction_task],
                 verbose=False
             ).kickoff()
+            step3_elapsed = time.time() - step3_start
+            print(f"✅ Agent 1 (recommendations) completed in {step3_elapsed:.2f}s")
             
             # Parse recommendation extraction result
             rec_extraction_str = str(rec_extraction_result)
@@ -258,33 +514,59 @@ def process_attraction_discovery_multi_agent(email_features: EmailFeatures, emai
                 print(f"⚠️ Failed to parse recommendation extraction: {rec_extraction_str[:200]}")
                 recommended_attractions = []
             
-            # Format recommended attractions
-            for attr in recommended_attractions[:5]:  # Limit to 5
-                # Avoid duplicates with direct_match
-                if attr.get("name") not in [a["name"] for a in direct_match]:
-                    recommendations.append({
-                        "name": attr.get("name", "Unknown Attraction"),
-                        "location": attr.get("location", location),
-                        "type": "general",
-                        "description": attr.get("description", ""),
-                        "map_link": attr.get("map_link", ""),
-                        "fun_fact": attr.get("fun_fact", "")
-                    })
+            # Format recommended attractions (exactly 3, one per location)
+            for attr in recommended_attractions[:3]:  # Limit to 3
+                attr_name = attr.get("name", "Unknown Attraction")
+                attr_location = attr.get("location", recommended_locations[0] if recommended_locations else "Unknown")
+                
+                # Generate Google Maps link if not provided or invalid
+                map_link = attr.get("map_link", "")
+                if not map_link or not map_link.startswith("http"):
+                    # Generate Google Maps search URL
+                    search_query = f"{attr_name.replace(' ', '+')}+{attr_location.replace(' ', '+')}"
+                    map_link = f"https://www.google.com/maps/search/{search_query}"
+                
+                recommendations.append({
+                    "name": attr_name,
+                    "location": attr_location,
+                    "type": "general",
+                    "description": attr.get("description", ""),
+                    "map_link": map_link,
+                    "fun_fact": attr.get("fun_fact", "")
+                })
             
             print(f"✅ Agent 1: Found {len(recommendations)} recommended attraction(s)")
         
         total_count = len(direct_match) + len(recommendations)
+        total_elapsed = time.time() - start_time
+        print(f"✅ Multi-Agent attraction discovery completed in {total_elapsed:.2f}s")
+        
         return {
             "message": f"Successfully discovered {total_count} attraction(s) using Multi-Agent system",
             "success": True,
             "data": {
                 "direct_match": direct_match,
                 "recommendations": recommendations
-            }
+            },
+            "_processing_time": round(total_elapsed, 2)
         }
         
+    except TimeoutError as e:
+        elapsed = time.time() - start_time
+        error_msg = f"⏱️ Attraction discovery timed out after {elapsed:.2f}s: {str(e)}"
+        print(error_msg)
+        # Return partial results if we have direct_match
+        return {
+            "message": error_msg,
+            "success": False,
+            "data": {
+                "direct_match": direct_match if 'direct_match' in locals() else [],
+                "recommendations": recommendations if 'recommendations' in locals() else []
+            }
+        }
     except Exception as e:
-        error_msg = f"❌ Multi-Agent attraction discovery failed: {e}"
+        elapsed = time.time() - start_time
+        error_msg = f"❌ Multi-Agent attraction discovery failed after {elapsed:.2f}s: {e}"
         print(error_msg)
         import traceback
         traceback.print_exc()
