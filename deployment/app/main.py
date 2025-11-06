@@ -7,7 +7,7 @@ from fastapi import FastAPI, Query, HTTPException
 import joblib
 from pydantic import BaseModel as PBaseModel, Field
 from dotenv import load_dotenv
-from email_manager.calendar_code import process_email_to_calendar
+import email_manager.calendar_code as calendar
 
 # Add parent directory to path to import from deployment root
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -265,20 +265,32 @@ async def extract(req: EmailRequest):
 
 @app.post("/create")
 async def create(req: EmailRequest):
-    """Create calendar event from email"""
+    """Create calendar event from email, using multi agent to decide on details"""
     try:
         full_text = f"Subject: {req.subject}\n\nBody: {req.body}"
         features = extract_email_features(full_text)
         features.category = req.category
-        response = process_email_to_calendar(features)
+        response = calendar.process_email_to_calendar(features)
         
         if response is None:
             raise HTTPException(status_code=400, detail="Failed to create event from email")
+
+        #{'calendar_event': {'title': 'Singapore flight booking confirmed', 'location': 'Madinah (MED) to Singapore (SIN)', 'start': datetime.date(2023, 11, 29), 'end': datetime.date(2023, 11, 30), 'date_from': '2023-11-29', 'date_to': '2023-11-29', 'time_from': '19:00:00', 'time_to': '22:00:00', 'all_day': True, 'calendar_title': 'Flight to Singapore', 'calendar_description': 'Your flight from Madinah (MED) to Singapore (SIN) is confirmed.', 'calendar_color': '#9370DB', 'calendar_reminder_minutes': 1440}, 'decision': {'should_add': True, 'reasoning': 'Has valid date', 'priority': 'high', 'confidence': 0.9}, 'scheduling': {'date_from': '2023-11-29', 'date_to': '2023-11-29', 'time_from': '19:00:00', 'time_to': '22:00:00', 'all_day': True}, 'processed': True, 'skipped': False}}
+        if response.get("processed"):
+            calendar_function = calendar.CalendarFunction(features, response.get("calendar_event", {}))
+            event = calendar_function.save_calendar()
+            ics = calendar_function.create_ics()
+        else:
+            raise HTTPException(status_code=400, detail="Email processing was skipped; event not created")
             
         return {
-            "success": True,
-            "data": response
-        }
+                "message": "Calendar event created successfully",
+                "success": True,
+                "data": {
+                    "event": event,
+                    "ics_file_path": ics
+                }
+            }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

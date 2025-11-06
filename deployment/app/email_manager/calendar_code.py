@@ -37,49 +37,24 @@ crewai_llm = LLM(
 
 DEFAULT_TZ = "UTC"
 
-
-def parse_event_with_llm(text):
-    """
-    Extract structured calendar info using OpenAI.
-    """
-    system_prompt = (
-    "You are an assistant that extracts calendar event data from text. "
-    "Respond ONLY with a valid JSON object (no markdown, no explanations). "
-    "Include these fields: title, start_time, end_time, location, description. "
-    "Use ISO 8601 datetime format. "
-    "If end_time is missing, set it one hour after start_time."
-)
-
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": text},
-        ],
-        temperature=0,
-    )
-
-    content = response.choices[0].message.content.strip()
-    try:
-        return json.loads(content)
-    except json.JSONDecodeError:
-        raise ValueError(f"Model output was not valid JSON:\n{content}")
-
 class CalendarFunction():
-    def __init__(self, email_features):
+    def __init__(self, email_features, calendar_event=None):
         self.email_features = email_features
-        # Create event object
-        self.event = {
-            "title": email_features.title or "Untitled Event",
-            "start": None,  # Will be set below
-            "end": None,    # Will be set below
-            "description": email_features.email_text or "",
-            "location": email_features.location or "",
-            "label": self._get_event_label(),
-            "meeting_url": email_features.meeting_url or "",
-            "urgency_level": str(email_features.urgency_level) if email_features.urgency_level else "low",
-            "action_required": str(email_features.action_required) if email_features.action_required else "none"
-        }
+        if calendar_event:
+            self.event = calendar_event
+        else:
+            # Create event object
+            self.event = {
+                "title": email_features.title or "Untitled Event",
+                "start": None,  # Will be set below
+                "end": None,    # Will be set below
+                "description": email_features.email_text or "",
+                "location": email_features.location or "",
+                "label": self._get_event_label(),
+                "meeting_url": email_features.meeting_url or "",
+                "urgency_level": str(email_features.urgency_level) if email_features.urgency_level else "low",
+                "action_required": str(email_features.action_required) if email_features.action_required else "none"
+            }
         
         # Combine date and time for ISO format
         if email_features.date_from and email_features.time_from:
@@ -116,35 +91,39 @@ class CalendarFunction():
         """
         Build and save an .ics file.
         """
-        cal = Calendar()
-        cal.add('prodid', '-//OpenAI Calendar Agent//')
-        cal.add('version', '2.0')
+        try:
+            cal = Calendar()
+            cal.add('prodid', '-//OpenAI Calendar Agent//')
+            cal.add('version', '2.0')
 
-        event = Event()
-        event.add('summary', self.event['title'])
-        event.add('description', self.event.get('description', ''))
-        if self.event.get('location'):
-            event.add('location', vText(self.event['location']))
+            event = Event()
+            event.add('summary', self.event['title'])
+            event.add('description', self.event.get('description', ''))
+            if self.event.get('location'):
+                event.add('location', vText(self.event['location']))
 
-        tz = pytz.timezone(DEFAULT_TZ)
-        start = dateparser.parse(self.event['start'])
-        if not start:
-            raise ValueError("Unable to parse start_time")
-        end = dateparser.parse(self.event.get('end'))
-        if not end:
-            end = start + timedelta(hours=1)
+            tz = pytz.timezone(DEFAULT_TZ)
+            start = dateparser.parse(self.event['start'])
+            if not start:
+                raise ValueError("Unable to parse start_time")
+            end = dateparser.parse(self.event.get('end'))
+            if not end:
+                end = start + timedelta(hours=1)
 
-        event.add('dtstart', start.astimezone(tz))
-        event.add('dtend', end.astimezone(tz))
-        event.add('dtstamp', datetime.now(tz))
-        event['uid'] = f"{datetime.now().timestamp()}@llm-agent"
+            event.add('dtstart', start.astimezone(tz))
+            event.add('dtend', end.astimezone(tz))
+            event.add('dtstamp', datetime.now(tz))
+            event['uid'] = f"{datetime.now().timestamp()}@llm-agent"
 
-        cal.add_component(event)
+            cal.add_component(event)
 
-        with open(output_path, "wb") as f:
-            f.write(cal.to_ical())
+            with open(output_path, "wb") as f:
+                f.write(cal.to_ical())
 
-        return str(os.path.abspath(output_path))
+            return str(os.path.abspath(output_path))
+        except Exception as e:
+            print(f"❌ Failed to create ICS file: {e}")
+            return None
 
     def save_calendar(self)  -> Dict[str, Any]:
         path = CALENDAR_PATH
@@ -329,10 +308,13 @@ def process_email_to_calendar(email_features: EmailFeatures, timeout_seconds: in
         if "```json" in result_str:
             result_str = result_str.split("```json")[1].split("```")[0].strip()
         calendar_fields = json.loads(result_str)
-
+        
         # Merge
         calendar_event = {
-            **email_features,
+            "title": email_features.title,
+            "location": email_features.location,
+            "start": email_features.date_from,
+            "end": email_features.date_to,
             **scheduling_result,
             **calendar_fields
         }

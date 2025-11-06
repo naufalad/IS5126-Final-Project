@@ -303,5 +303,35 @@
     "meeting_url": "",
     "urgency_level": "low",
     "action_required": "none"
+  },
+  {
+    "title": "Singapore flight booking confirmed",
+    "location": "Madinah (MED) to Singapore (SIN)",
+    "start": "2023-11-29T18:05:00",
+    "end": "2023-11-30T12:30:00",
+    "date_from": "2023-11-29",
+    "date_to": "2023-11-29",
+    "time_from": "19:00:00",
+    "time_to": "22:00:00",
+    "all_day": true,
+    "calendar_title": "Flight to Singapore",
+    "calendar_description": "Your flight from Madinah (MED) to Singapore (SIN) is confirmed.",
+    "calendar_color": "#9370DB",
+    "calendar_reminder_minutes": 1440
+  },
+  {
+    "title": "Flight to Singapore",
+    "location": "Madinah (MED) to Singapore (SIN)",
+    "start": "2023-11-29T18:05:00",
+    "end": "2023-11-30T12:30:00",
+    "date_from": "2023-11-29",
+    "date_to": "2023-11-29",
+    "time_from": "19:00:00",
+    "time_to": "22:00:00",
+    "all_day": true,
+    "calendar_title": "Flight to Singapore",
+    "calendar_description": "Your flight from Madinah (MED) to Singapore (SIN) is confirmed.",
+    "calendar_color": "#9370DB",
+    "calendar_reminder_minutes": 1440
   }
 ]
