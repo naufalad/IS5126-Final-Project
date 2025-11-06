@@ -225,10 +225,10 @@ async def predict(req: PredictRequest):
                 model_data = joblib.load('./models/bert.joblib')
             case 2:
                 # MPNET + XGBoost
-                model_data = joblib.load('./models/rf_mpnet_model.joblib')
+                model_data = joblib.load('./models/xgb_mpnet_full.joblib')
             case 3:
-                # CNN
-                model_data = joblib.load('./models/xgb_mpnet_model.joblib')
+                # RF
+                model_data = joblib.load('./models/rf_mpnet_full.joblib')
             case _:
                 raise ValueError(f"Invalid model selection: {req.model}")
         
@@ -236,11 +236,11 @@ async def predict(req: PredictRequest):
         input_data = f"{req.subject} {req.body}" if req.subject else req.body
         
         # Make prediction
-        prediction, probabilities = model_data.predict(input_data)
+        prediction = model_data.predict(input_data)[0]
         
         return {
             "success": True,
-            "prediction": prediction,
+            "prediction": prediction[0] if isinstance(prediction, list) else prediction,
             # "probabilities": probabilities.tolist(),
             "explanation": explain_email_categories(input_data, category=prediction),
             "model_used": req.model

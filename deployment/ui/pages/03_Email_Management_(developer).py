@@ -166,7 +166,7 @@ with colA:
             if api_response:
                 if api_response.get("success"):
                     st.success("Received email prediction")
-                    category = api_response.get("prediction")[0]
+                    category = api_response.get("prediction")
                     st.info(f"📧 Predicted Category: **{category}**")
                     st.session_state['predicted_category'] = category
                     explanation = api_response.get("explanation", "No explanation provided")
