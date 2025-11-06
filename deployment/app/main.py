@@ -7,6 +7,7 @@ from fastapi import FastAPI, Query, HTTPException
 import joblib
 from pydantic import BaseModel as PBaseModel, Field
 from dotenv import load_dotenv
+import email_manager.calendar_code as calendar
 
 # Add parent directory to path to import from deployment root
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -159,32 +160,28 @@ def function_calling(email_features: EmailFeatures, email_text: str = "") -> Any
                         event = result.get("data", {}).get("event", {})
                         print(f"✅ Event Created: {event.get('title')} on {event.get('start')}")
                     case "spotify_link_discovery":
-                        for r in result.get("data", {}).get('songs', []):
-                            print(f"🎵 Song Name: {r.get('song')}")
-                            print(f"👤 Artist: {r.get('artist')}")
-                            print(f"🔗 Spotify Link: {r.get('spotify_url')}")
+                        if isinstance(result, (list, tuple)) and result:
+                            print(f"🎵 Found {len(result)} Song(s):")
+                            result = {"songs": result}
+                            for r in result["songs"]:
+                                print(f"🎵 Song Name: {r.get('name')}")
+                                print(f"👤 Artist: {r.get('artist')}")
+                                print(f"🗓️ Release Date: {r.get('release_date')}")
+                                print(f"💽 Album: {r.get('album')}")
+                                print(f"🔗 Spotify Link: {r.get('spotify_url')}")
+                        else:
+                            print(f"🎵 Song Name: {result.get('name')}")
+                            print(f"👤 Artist: {result.get('artist')}")
+                            print(f"🗓️ Release Date: {result.get('release_date')}")
+                            print(f"💽 Album: {result.get('album')}")
+                            print(f"🔗 Spotify Link: {result.get('spotify_url')}")
                     case "attraction_discovery":
-                        data = result.get("data", {})
-                        # Support both old format (attractions) and new format (direct_match + recommendations)
-                        direct_match = data.get('direct_match', [])
-                        recommendations = data.get('recommendations', [])
-                        old_attractions = data.get('attractions', [])
-                        
-                        if direct_match:
-                            print(f"📍 Direct Match Attractions ({len(direct_match)}):")
-                            for r in direct_match:
-                                print(f"  🎭 {r.get('name')} - {r.get('location')}")
-                        
-                        if recommendations:
-                            print(f"🌟 Recommended Attractions ({len(recommendations)}):")
-                            for r in recommendations:
-                                print(f"  🎭 {r.get('name')} - {r.get('location')}")
-                        
-                        # Old format support
-                        if old_attractions:
-                            print(f"🎭 Attractions ({len(old_attractions)}):")
-                            for r in old_attractions:
-                                print(f"  🎭 {r.get('name')} - {r.get('location')}")
+                        result = {"attractions": result}
+                        for r in result["attractions"]:
+                            print(f"🎭 Attraction Name: {r.get('name')}")
+                            print(f"📍 Map Link: {r.get('map_link')}")
+                            print(f"📝 Description: {r.get('description')}")
+                            print(f"🤩 Fun Fact: {r.get('fun_fact')}")
             except Exception as e:
                 print(f"❌ Result structuring failed: {e}")
             result['function_name'] = function_name
@@ -236,10 +233,10 @@ async def predict(req: PredictRequest):
                 model_data = joblib.load('./models/bert.joblib')
             case 2:
                 # MPNET + XGBoost
-                model_data = joblib.load('./models/rf_mpnet_model.joblib')
+                model_data = joblib.load('./models/xgb_mpnet_full.joblib')
             case 3:
-                # CNN
-                model_data = joblib.load('./models/xgb_mpnet_model.joblib')
+                # RF
+                model_data = joblib.load('./models/rf_mpnet_full.joblib')
             case _:
                 raise ValueError(f"Invalid model selection: {req.model}")
         
@@ -247,11 +244,11 @@ async def predict(req: PredictRequest):
         input_data = f"{req.subject} {req.body}" if req.subject else req.body
         
         # Make prediction
-        prediction, probabilities = model_data.predict(input_data)
+        prediction = model_data.predict(input_data)[0]
         
         return {
             "success": True,
-            "prediction": prediction,
+            "prediction": prediction[0] if isinstance(prediction, list) else prediction,
             # "probabilities": probabilities.tolist(),
             "explanation": explain_email_categories(input_data, category=prediction),
             "model_used": req.model
@@ -276,81 +273,32 @@ async def extract(req: EmailRequest):
 
 @app.post("/create")
 async def create(req: EmailRequest):
-    """Create calendar event from email and handle Spotify/attractions if needed (Multi-Agent)"""
+    """Create calendar event from email, using multi agent to decide on details"""
     try:
         full_text = f"Subject: {req.subject}\n\nBody: {req.body}" if req.subject else req.body
         features = extract_email_features(full_text)
-        features.category = req.category or features.category
+        features.category = req.category
+        response = calendar.process_email_to_calendar(features)
         
-        # Initialize response structure
-        result = {
-            "calendar_event": None,
-            "spotify_links": None,
-            "attractions": None,
-            "features": features.model_dump()
-        }
-        
-        # Check if email contains music/concert information
-        email_text_lower = full_text.lower()
-        music_keywords = ["music", "song", "artist", "concert", "spotify", "band", "album", "track"]
-        has_music_content = any(keyword in email_text_lower for keyword in music_keywords)
-        
-        # Check if email contains travel/tourism information
-        travel_keywords = ["travel", "tourism", "attraction", "visit", "tour", "sightseeing", "landmark"]
-        has_travel_content = any(keyword in email_text_lower for keyword in travel_keywords)
-        
-        # Process calendar event (multi-agent)
-        calendar_response = process_email_to_calendar(features)
-        if calendar_response and calendar_response.get("calendar_event"):
-            result["calendar_event"] = calendar_response
-        
-        # Process Spotify if music content detected (Multi-Agent mode)
-        if has_music_content:
-            try:
-                from classes.FunctionCall import FunctionCall
-                function_call = FunctionCall(features, full_text)
-                # Use Multi-Agent mode for Spotify recommendations
-                spotify_result = function_call.spotify_link_discovery(use_multi_agent=True)
-                if spotify_result.get("success") and spotify_result.get("data", {}).get("songs"):
-                    result["spotify_links"] = spotify_result
-            except Exception as e:
-                print(f"⚠️ Spotify discovery failed: {e}")
-                import traceback
-                traceback.print_exc()
-                result["spotify_links"] = {
-                    "success": False,
-                    "message": f"Spotify discovery failed: {str(e)}"
-                }
-        
-        # Process attractions if travel content detected (Multi-Agent mode)
-        if has_travel_content:
-            try:
-                from classes.FunctionCall import FunctionCall
-                function_call = FunctionCall(features, full_text)
-                # Use Multi-Agent mode for attractions
-                attractions_result = function_call.attraction_discovery(use_multi_agent=True)
-                # Check if we have any attractions (direct_match or recommendations)
-                if attractions_result.get("success"):
-                    data = attractions_result.get("data", {})
-                    direct_match = data.get("direct_match", [])
-                    recommendations = data.get("recommendations", [])
-                    # Also support old format for backward compatibility
-                    old_attractions = data.get("attractions", [])
-                    if direct_match or recommendations or old_attractions:
-                        result["attractions"] = attractions_result
-            except Exception as e:
-                print(f"⚠️ Attraction discovery failed: {e}")
-                import traceback
-                traceback.print_exc()
-                result["attractions"] = {
-                    "success": False,
-                    "message": f"Attraction discovery failed: {str(e)}"
-                }
-        
+        if response is None:
+            raise HTTPException(status_code=400, detail="Failed to create event from email")
+
+        #{'calendar_event': {'title': 'Singapore flight booking confirmed', 'location': 'Madinah (MED) to Singapore (SIN)', 'start': datetime.date(2023, 11, 29), 'end': datetime.date(2023, 11, 30), 'date_from': '2023-11-29', 'date_to': '2023-11-29', 'time_from': '19:00:00', 'time_to': '22:00:00', 'all_day': True, 'calendar_title': 'Flight to Singapore', 'calendar_description': 'Your flight from Madinah (MED) to Singapore (SIN) is confirmed.', 'calendar_color': '#9370DB', 'calendar_reminder_minutes': 1440}, 'decision': {'should_add': True, 'reasoning': 'Has valid date', 'priority': 'high', 'confidence': 0.9}, 'scheduling': {'date_from': '2023-11-29', 'date_to': '2023-11-29', 'time_from': '19:00:00', 'time_to': '22:00:00', 'all_day': True}, 'processed': True, 'skipped': False}}
+        if response.get("processed"):
+            calendar_function = calendar.CalendarFunction(features, response.get("calendar_event", {}))
+            event = calendar_function.save_calendar()
+            ics = calendar_function.create_ics()
+        else:
+            raise HTTPException(status_code=400, detail="Email processing was skipped; event not created")
+            
         return {
-            "success": True,
-            "data": result
-        }
+                "message": "Calendar event created successfully",
+                "success": True,
+                "data": {
+                    "event": event,
+                    "ics_file_path": ics
+                }
+            }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

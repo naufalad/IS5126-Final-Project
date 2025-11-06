@@ -72,47 +72,48 @@ class FunctionCall():
                 "message": error_msg,
                 "success": False
             }
-    def spotify_link_discovery(self, artist: str = None, song: str = None, use_multi_agent: bool = False) -> Dict[str, Any]:
-        """Discover Spotify links based on email features.
+    def spotify_link_discovery(self) -> List[Dict[str, Any]]:
+        """Discover Spotify links based on email features."""
+        # TODO: Implement Spotify API integration
+        print("🎵 Spotify link discovery called")
         
-        Single Agent mode: Simple extraction and direct links to Spotify
-        Multi Agent mode: Generates "Guess You Like" recommendations based on email content (no links, just options)
-        """
-        try:
-            print(f"🎵 Spotify discovery called (mode: {'Multi-Agent' if use_multi_agent else 'Single-Agent'})")
-            
-            # Multi-Agent mode: Generate recommendations
-            if use_multi_agent:
-                from email_manager.spotify_multi_agent import process_spotify_recommendations_multi_agent
-                return process_spotify_recommendations_multi_agent(self.email_text)
-            
-            # Single-Agent mode: Simple extraction with direct links
-            from email_manager.spotify_code import SpotifyFunction
-            
-            # Create SpotifyFunction instance with provided parameters and email text
-            spotify_func = SpotifyFunction(
-                artist=artist,
-                song=song,
-                email_text=self.email_text
-            )
-            
-            # Discover Spotify links (with actual links)
-            result = spotify_func.discover_spotify_links()
-            # Mark as direct links mode
-            if result.get("success") and "data" in result:
-                result["data"]["mode"] = "direct_links"
-            return result
-            
-        except Exception as e:
-            error_msg = f"❌ Failed to discover Spotify links: {e}"
-            print(error_msg)
-            return {
-                "message": error_msg,
-                "success": False,
-                "data": {
-                    "songs": []
-                }
-            }
+        parsed_input = spotify.parse_song_input(self.email_text)
+        artist = artist or parsed_input.get("artist")
+        song = song or parsed_input.get("title")
+        print(f"🔍 Searching for Artist: {artist}, Song: {song}")
+
+        # Call Spotify API to search for the song
+        if song:
+            track = spotify.search_spotify_song(song, artist)
+            if track:
+                # Add descriptions
+                track["artist_description"] = spotify.get_artist_description(track["artist_id"])
+                track["song_description"] = spotify.get_song_description(track["name"], track["artist"])
+
+                print("\n✅ Track info with descriptions:")
+                return track
+            else:
+                print("⚠️ Track not found on Spotify.")
+        else:
+            print(f"\nℹ️ No song specified. Showing latest songs by {artist}:")
+            latest = spotify.latest_songs_by_artist(artist, limit=5)
+            return latest
+    
+    def attraction_discovery(self) -> List[Dict[str, Any]]:
+        """Discover attractions based on email features."""
+        print("🎭 Attraction discovery called")
+        
+        # Use location from email features if not provided
+        location = flights.parse_destination_input(self.email_text)
+        print(f"🔍 Searching for attractions in Location: {location}")
+        # Call Flights API to search for attractions
+        attractions = flights.get_attractions_with_maps(location)
+        if attractions:
+            print("\n✅ Attractions found:")
+            return attractions
+        else:
+            print("⚠️ No attractions found.")
+            return []
     
     def attraction_discovery(self, location: str = None, attraction_type: str = None, use_multi_agent: bool = False) -> Dict[str, Any]:
         """Discover attractions based on email features.
@@ -291,16 +292,7 @@ spotify_link_schema = {
         "description": "Discover Spotify links for songs or artists mentioned in the email. Use this when the email mentions music, concerts, or artists.",
         "parameters": {
             "type": "object",
-            "properties": {
-                "artist": {
-                    "type": "string",
-                    "description": "Name of the artist or band"
-                },
-                "song": {
-                    "type": "string",
-                    "description": "Name of the song or track"
-                }
-            },
+            "properties": {},
             "required": []
         }
     }
@@ -313,18 +305,8 @@ attraction_discovery_schema = {
         "description": "Discover attractions, venues, or points of interest based on location mentioned in the email. Use this when the email mentions travel, tourism, or local attractions.",
         "parameters": {
             "type": "object",
-            "properties": {
-                "location": {
-                    "type": "string",
-                    "description": "Location name (city, region, or address)"
-                },
-                "attraction_type": {
-                    "type": "string",
-                    "description": "Type of attraction (museum, park, restaurant, etc.)",
-                    "enum": ["museum", "park", "restaurant", "theater", "landmark", "general"]
-                }
-            },
-            "required": ["location"]
+            "properties": {},
+            "required": []
         }
     }
 }

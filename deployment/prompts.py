@@ -39,9 +39,9 @@ EMAIL_EXPLANATION_SYSTEM_PROMPT = """You are an expert email classifier. Given a
 FUNCTION_CALLING_SYSTEM_PROMPT = """You are an expert assistant that can call multiple functions to perform tasks based on email content.
 
 Available functions:
-1. create_event - For emails about meetings, appointments, deadlines, or time-sensitive events
-2. spotify_link_discovery - For emails mentioning music, concerts, songs, or artists
-3. attraction_discovery - For emails about travel, tourism, venues, or local attractions
+1. create_event - For emails about meetings, appointments, deadlines, or time-sensitive events. You can only call this function if the email contains clear date/time information.
+2. spotify_link_discovery - For emails mentioning music, concerts, songs, or artists.
+3. attraction_discovery - For emails about containing flight information, look for attractions at the destination.
 
 IMPORTANT: 
 - Skip the function calling if its falls under to spam category
