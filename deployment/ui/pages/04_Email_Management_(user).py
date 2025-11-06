@@ -36,7 +36,7 @@ hr { border: 1px solid #333; }
 """, unsafe_allow_html=True)
 
 # Backend API configuration
-load_dotenv()  # Load .env file if it exists
+# load_dotenv()  # Load .env file if it exists
 
 BACKEND_URL = os.getenv("BACKEND_API", "http://127.0.0.1:8000")
 
@@ -233,5 +233,6 @@ if 'email_features' in st.session_state:
     st.json(st.session_state['email_features'])
 else:
     st.info("No features extracted yet. Click 'Extract and Manage Email Features' to process an email.")
+
 
 
