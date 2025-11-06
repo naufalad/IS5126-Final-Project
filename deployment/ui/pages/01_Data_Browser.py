@@ -86,6 +86,7 @@ st.title("Data Browser")
 def load_local_data():
     try:
         current_dir = os.path.dirname(os.path.abspath(__file__))
+        st.title(current_dir)
         ui_dir = os.path.dirname(current_dir)
         data_path = os.path.join(os.path.dirname(ui_dir), "data", "email_features.json")
         with open(data_path, "r", encoding="utf-8") as f:
@@ -243,3 +244,4 @@ if page_data:
                 st.json({k: v for k, v in item.items() if k != "email_text"})
 else:
     st.info("No matching records found.")
+
