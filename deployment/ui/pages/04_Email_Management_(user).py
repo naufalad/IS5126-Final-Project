@@ -66,6 +66,94 @@ def create_openai_client():
     except Exception:
         return None
 
+def display_spotify_results(func_result: dict):
+    """Display Spotify link discovery results in a beautiful UI"""
+    data = func_result.get("data", {})
+    songs = data.get("songs", [])
+    
+    if not songs:
+        st.warning("⚠️ No Spotify songs found")
+        return
+    
+    st.success(f"🎵 Found {len(songs)} Spotify song(s)!")
+    
+    # Spotify-themed styling
+    st.markdown("""
+    <style>
+    .spotify-card {
+        background: linear-gradient(135deg, #1DB954 0%, #1ed760 100%);
+        border-radius: 12px;
+        padding: 20px;
+        margin: 10px 0;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        transition: transform 0.2s;
+    }
+    .spotify-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(29, 185, 84, 0.4);
+    }
+    .spotify-song-title {
+        color: #121212;
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    .spotify-artist {
+        color: #1a1a1a;
+        font-size: 14px;
+        margin-bottom: 10px;
+    }
+    .spotify-link {
+        background-color: #121212;
+        color: #1DB954;
+        padding: 8px 16px;
+        border-radius: 20px;
+        text-decoration: none;
+        display: inline-block;
+        font-weight: bold;
+        transition: all 0.3s;
+    }
+    .spotify-link:hover {
+        background-color: #1DB954;
+        color: #121212;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Display each song
+    for i, song in enumerate(songs, 1):
+        song_name = song.get("song", "Unknown Song")
+        artist = song.get("artist", "Unknown Artist")
+        spotify_url = song.get("spotify_url", "")
+        album = song.get("album", "")
+        release_date = song.get("release_date", "")
+        
+        # Create card
+        with st.container():
+            col1, col2 = st.columns([3, 1])
+            
+            with col1:
+                st.markdown(f"### 🎵 {song_name}")
+                st.markdown(f"**👤 Artist:** {artist}")
+                
+                if album:
+                    st.markdown(f"**💿 Album:** {album}")
+                if release_date:
+                    st.markdown(f"**📅 Released:** {release_date}")
+            
+            with col2:
+                if spotify_url:
+                    # Use link button for better UX
+                    st.link_button(
+                        "🎵 Play on Spotify",
+                        spotify_url,
+                        use_container_width=True,
+                        type="primary"
+                    )
+        
+        st.divider()
+
+
 def call_function_call_api(email_data: dict) -> dict:
     """Call backend API /function_call endpoint to process email and create calendar event"""
     try:
@@ -184,25 +272,40 @@ with colA:
                             st.markdown("**Function Responses:**")
                             st.info(f"ℹ️ No functions were executed: {function_result.get('response')}")
                         else:
-                            # Handle ICS file download if event created
-                            if function_result and function_result[0].get("function_name")=="create_event":
-                                ics_file_path = function_result[0].get("data", {}).get("ics_file_path")
-                                if ics_file_path:
-                                    st.success(f"📄 ICS file created: {ics_file_path}")
-                                    try:
-                                        with open(ics_file_path, "rb") as f:
-                                            ics_data = f.read()
-                                        st.download_button(
-                                            label="📥 Download ICS Calendar File",
-                                            data=ics_data,
-                                            file_name=ics_file_path,
-                                            mime="text/calendar",
-                                            type="primary"
-                                        )
-                                    except Exception as e:
-                                        st.error(f"Failed to download ICS file: {str(e)}")
-                                else:
-                                    st.info("ℹ️ No calendar file generated (no time-based event detected)")
+                            # Process all function results (can be multiple functions)
+                            if isinstance(function_result, list):
+                                for func_result in function_result:
+                                    function_name = func_result.get("function_name", "")
+                                    
+                                    # Handle calendar event creation
+                                    if function_name == "create_event":
+                                        ics_file_path = func_result.get("data", {}).get("ics_file_path")
+                                        if ics_file_path:
+                                            st.success(f"📄 ICS file created: {ics_file_path}")
+                                            try:
+                                                with open(ics_file_path, "rb") as f:
+                                                    ics_data = f.read()
+                                                st.download_button(
+                                                    label="📥 Download ICS Calendar File",
+                                                    data=ics_data,
+                                                    file_name=ics_file_path,
+                                                    mime="text/calendar",
+                                                    type="primary"
+                                                )
+                                            except Exception as e:
+                                                st.error(f"Failed to download ICS file: {str(e)}")
+                                        else:
+                                            st.info("ℹ️ No calendar file generated (no time-based event detected)")
+                                    
+                                    # Handle Spotify link discovery
+                                    elif function_name == "spotify_link_discovery":
+                                        display_spotify_results(func_result)
+                                    
+                                    # Handle attraction discovery
+                                    elif function_name == "attraction_discovery":
+                                        st.info("🎭 Attraction discovery results available (to be displayed)")
+                            else:
+                                st.info("ℹ️ No functions were executed")
                     else:
                         st.info("ℹ️ No functions were executed")
                 else:
