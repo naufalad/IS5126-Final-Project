@@ -38,6 +38,7 @@ class ActionRequirement(str, Enum):
     DOWNLOAD = "download"
     COMPLETE = "complete"
     REVIEW = "review"
+    REGISTER = "register"
     NONE = "none"
 
 class LocationType(str, Enum):
@@ -49,7 +50,7 @@ class LocationType(str, Enum):
 class EmailFeatures(BaseModel):
     """Pydantic model for extracting structured features from email content."""
 
-    email_text: Optional[str] = Field(None, description="Full email text")
+    email_text: str = Field(..., description="Full email text")
 
     # Date/Time fields
     scheduled_datetime: Optional[datetime] = Field(None, description="Extracted date and time")

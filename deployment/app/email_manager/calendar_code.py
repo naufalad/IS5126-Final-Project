@@ -1,20 +1,17 @@
 import os
 import json
-from datetime import datetime, timedelta
+import time  # time module for time.time()
+from datetime import datetime, timedelta, time as dt_time  # alias datetime.time to dt_time
 import pytz
-import dateparser
 from icalendar import Calendar, Event, vText
 from openai import OpenAI
 from crewai import Agent, Task, Crew, LLM
-import json
-from datetime import datetime
-import time
 from dotenv import load_dotenv
 from typing import Dict, Any
 OPENAI_MODEL_NAME = "gpt-4o-mini"
-from crewai import Agent, Task, Crew, LLM
 
 from classes.EmailFeatures import EmailFeatures
+from dateutil import parser as dateutil_parser
 # Load environment variables
 load_dotenv()
 
@@ -64,10 +61,10 @@ class CalendarFunction():
             )
             self.event["start"] = start_datetime.isoformat()
         elif email_features.date_from:
-            # If only date, set time to midnight
+            # Use dt_time instead of time
             self.event["start"] = datetime.combine(
                 email_features.date_from,
-                time(0, 0, 0)
+                dt_time(0, 0, 0)
             ).isoformat()
 
         if email_features.date_to and email_features.time_to:
@@ -77,10 +74,10 @@ class CalendarFunction():
             )
             self.event["end"] = end_datetime.isoformat()
         elif email_features.date_to:
-            # If only date, set time to midnight
+            # Use dt_time instead of time
             self.event["end"] = datetime.combine(
                 email_features.date_to,
-                time(23, 59, 59)
+                dt_time(23, 59, 59)
             ).isoformat()
         elif self.event["start"]:
             # If no end date, copy start date
@@ -103,10 +100,8 @@ class CalendarFunction():
                 event.add('location', vText(self.event['location']))
 
             tz = pytz.timezone(DEFAULT_TZ)
-            start = dateparser.parse(self.event['start'])
-            if not start:
-                raise ValueError("Unable to parse start_time")
-            end = dateparser.parse(self.event.get('end'))
+            start = dateutil_parser.parse(self.event.get('start'))
+            end = dateutil_parser.parse(self.event.get('end'))
             if not end:
                 end = start + timedelta(hours=1)
 
@@ -277,6 +272,7 @@ def process_email_to_calendar(email_features: EmailFeatures, timeout_seconds: in
 
     try:
         # Task 1 — Classification
+        print("🕒 Starting email to calendar processing...")
         check_timeout()
         classification_task = create_classification_task(email_features)
         classification_result_raw = Crew(agents=[classifier_agent], tasks=[classification_task], verbose=False).kickoff()
@@ -294,6 +290,7 @@ def process_email_to_calendar(email_features: EmailFeatures, timeout_seconds: in
             }
 
         # Task 2 — Scheduling
+        print("🗓️ Scheduling event...")
         check_timeout()
         scheduling_task = create_scheduling_task(email_features)
         scheduling_result_raw = Crew(agents=[scheduler_agent], tasks=[scheduling_task], verbose=False).kickoff()
@@ -303,6 +300,7 @@ def process_email_to_calendar(email_features: EmailFeatures, timeout_seconds: in
         scheduling_result = json.loads(result_str)
 
         # Task 3 — Formatting
+        print("📝 Formatting calendar event...")
         check_timeout()
         formatting_task = create_formatting_task(email_features)
         formatting_result_raw = Crew(agents=[formatter_agent], tasks=[formatting_task], verbose=False).kickoff()

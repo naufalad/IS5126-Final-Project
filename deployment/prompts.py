@@ -1,7 +1,13 @@
 from unicodedata import category
 
 
-EMAIL_EXTRACTION_SYSTEM_PROMPT = """You are an expert email analyzer. Extract structured information from emails and return it in the specified JSON format.
+EMAIL_EXTRACTION_SYSTEM_PROMPT = """
+Extract structured features from the email.
+
+For action_required, use ONLY these values:
+- confirm, reply, pay, verify, click, download, complete, review, register, none
+
+If the action doesn't match exactly, choose the closest match or use 'complete' for generic actions like register/subscribe/update.
 
         Focus on identifying:
         1. Scheduled dates/times (appointments, deadlines, events) - extract date ranges and time ranges
@@ -40,12 +46,13 @@ FUNCTION_CALLING_SYSTEM_PROMPT = """You are an expert assistant that can call mu
 
 Available functions:
 1. create_event - For emails about meetings, appointments, deadlines, or time-sensitive events. You can only call this function if the email contains clear date/time information.
-2. spotify_link_discovery - For emails mentioning music, concerts, songs, or artists.
-3. attraction_discovery - For emails about containing flight information, look for attractions at the destination.
+2. spotify_link_discovery - For emails mentioning music, concerts, songs, or artists. You only call this function if the email contains relevant music-related content.
+3. attraction_discovery - For emails about containing flight information, look for attractions at the destination. You only call this function if the email contains flight booking details.
 
 IMPORTANT: 
 - Skip the function calling if its falls under to spam category
 - You can call MULTIPLE functions if the email contains information relevant to multiple categories
+- But don't call functions that are not relevant to the email content
 - For example, if an email is about a concert, you might call BOTH create_event AND spotify_link_discovery
 - The order of the function calls explains the priority of function to be called first
 - Prefer using data from the extracted email features to decide which functions to call instead of relying solely on email text
@@ -62,6 +69,8 @@ EMAIL_EXTRACTION_USER_PROMPT_TEMPLATE = """Analyze this email and extract struct
             {email_text}
 
             Return a JSON object with these fields:
+            
+            - email_text: full email text
 
             DATE AND TIME FIELDS (NEW - IMPORTANT):
             - date_from: start date in YYYY-MM-DD format (e.g., "2025-11-15"), null if no date

@@ -66,99 +66,34 @@ def create_openai_client():
     except Exception:
         return None
 
-def display_spotify_results(func_result: dict):
-    """Display Spotify link discovery results in a beautiful UI"""
-    data = func_result.get("data", {})
-    songs = data.get("songs", [])
-    
-    if not songs:
-        st.warning("⚠️ No Spotify songs found")
-        return
-    
-    st.success(f"🎵 Found {len(songs)} Spotify song(s)!")
-    
-    # Spotify-themed styling
-    st.markdown("""
-    <style>
-    .spotify-card {
-        background: linear-gradient(135deg, #1DB954 0%, #1ed760 100%);
-        border-radius: 12px;
-        padding: 20px;
-        margin: 10px 0;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-        transition: transform 0.2s;
-    }
-    .spotify-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 12px rgba(29, 185, 84, 0.4);
-    }
-    .spotify-song-title {
-        color: #121212;
-        font-size: 18px;
-        font-weight: bold;
-        margin-bottom: 5px;
-    }
-    .spotify-artist {
-        color: #1a1a1a;
-        font-size: 14px;
-        margin-bottom: 10px;
-    }
-    .spotify-link {
-        background-color: #121212;
-        color: #1DB954;
-        padding: 8px 16px;
-        border-radius: 20px;
-        text-decoration: none;
-        display: inline-block;
-        font-weight: bold;
-        transition: all 0.3s;
-    }
-    .spotify-link:hover {
-        background-color: #1DB954;
-        color: #121212;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    # Display each song
-    for i, song in enumerate(songs, 1):
-        song_name = song.get("song", "Unknown Song")
-        artist = song.get("artist", "Unknown Artist")
-        spotify_url = song.get("spotify_url", "")
-        album = song.get("album", "")
-        release_date = song.get("release_date", "")
-        
-        # Create card
-        with st.container():
-            col1, col2 = st.columns([3, 1])
-            
-            with col1:
-                st.markdown(f"### 🎵 {song_name}")
-                st.markdown(f"**👤 Artist:** {artist}")
-                
-                if album:
-                    st.markdown(f"**💿 Album:** {album}")
-                if release_date:
-                    st.markdown(f"**📅 Released:** {release_date}")
-            
-            with col2:
-                if spotify_url:
-                    # Use link button for better UX
-                    st.link_button(
-                        "🎵 Play on Spotify",
-                        spotify_url,
-                        use_container_width=True,
-                        type="primary"
-                    )
-        
-        st.divider()
-
-
 def call_function_call_api(email_data: dict) -> dict:
     """Call backend API /function_call endpoint to process email and create calendar event"""
     try:
         response = requests.post(
             f"{BACKEND_URL}/function_call",
+            json=email_data,
+            timeout=30  # Longer timeout for LLM processing
+        )
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.ConnectionError:
+        st.error("Cannot connect to backend server. Please ensure the backend is running on port 8000.")
+        return None
+    except requests.exceptions.Timeout:
+        st.error("Request timed out. The backend may be processing - please try again.")
+        return None
+    except requests.exceptions.HTTPError as e:
+        st.error(f"HTTP Error: {e.response.status_code} - {e.response.text}")
+        return None
+    except Exception as e:
+        st.error(f"Failed to call API: {str(e)}")
+        return None
+
+def call_multi_agent_api(email_data: dict) -> dict:
+    """Call backend API /create endpoint to process email and create calendar event"""
+    try:
+        response = requests.post(
+            f"{BACKEND_URL}/create",
             json=email_data,
             timeout=30  # Longer timeout for LLM processing
         )
@@ -223,7 +158,7 @@ with colA:
             "model": model_choice
         }
     
-        with st.spinner("Processing email..."):
+        with st.spinner("Thinking..."):
             # Call backend API
             api_response = call_predict_api(email_payload)
             
@@ -232,6 +167,7 @@ with colA:
                     st.success("Received email prediction")
                     category = api_response.get("prediction")
                     st.info(f"📧 Predicted Category: **{category}**")
+                    st.session_state['predicted_category'] = category
                     explanation = api_response.get("explanation", "No explanation provided")
                     st.markdown("**Explanation:**")
                     st.info(explanation)
@@ -239,24 +175,29 @@ with colA:
                     st.warning(f"Email received but classification failed: {api_response.get('message', 'Unknown error')}")
             else:
                 st.error("Failed to process email via backend API")
+    model_choice = 'Single Agent'
+
     if st.button("Extract and Manage Email Features", type="primary"):
         st.session_state['received_email_index'] = idx_display
         subject = st.session_state.get("subject_area", "")
         body = st.session_state.get("body_area", "")
         
-        with st.spinner("Processing email..."):
+        with st.spinner("Thinking..."):
             # Prepare data for backend API
             email_payload = {
                 "subject": subject,
                 "body": body,
+                "category": st.session_state.get('predicted_category', 'general')
             }
             
             # Call backend API
-            api_response = call_function_call_api(email_payload)
-            
+            if(model_choice == 'Single Agent'):
+                api_response = call_function_call_api(email_payload)
+            else:
+                api_response = call_multi_agent_api(email_payload)
             if api_response:
+                # Check if event was managed
                 if api_response.get("success"):
-                    st.success("✅ Email features extracted successfully")
                     
                     email_features = api_response.get("features")
                     function_result = api_response.get("function_result", [])
@@ -266,48 +207,66 @@ with colA:
                         st.session_state['email_features'] = email_features
                     
                     # Display function results
-                    if function_result:
-                        st.info(f"📊 {len(function_result)} function(s) executed")
-                        if isinstance(function_result, dict) and "response" in function_result:
-                            st.markdown("**Function Responses:**")
-                            st.info(f"ℹ️ No functions were executed: {function_result.get('response')}")
-                        else:
-                            # Process all function results (can be multiple functions)
-                            if isinstance(function_result, list):
-                                for func_result in function_result:
-                                    function_name = func_result.get("function_name", "")
-                                    
-                                    # Handle calendar event creation
-                                    if function_name == "create_event":
-                                        ics_file_path = func_result.get("data", {}).get("ics_file_path")
-                                        if ics_file_path:
-                                            st.success(f"📄 ICS file created: {ics_file_path}")
-                                            try:
-                                                with open(ics_file_path, "rb") as f:
-                                                    ics_data = f.read()
-                                                st.download_button(
-                                                    label="📥 Download ICS Calendar File",
-                                                    data=ics_data,
-                                                    file_name=ics_file_path,
-                                                    mime="text/calendar",
-                                                    type="primary"
-                                                )
-                                            except Exception as e:
-                                                st.error(f"Failed to download ICS file: {str(e)}")
-                                        else:
-                                            st.info("ℹ️ No calendar file generated (no time-based event detected)")
-                                    
-                                    # Handle Spotify link discovery
-                                    elif function_name == "spotify_link_discovery":
-                                        display_spotify_results(func_result)
-                                    
-                                    # Handle attraction discovery
-                                    elif function_name == "attraction_discovery":
-                                        st.info("🎭 Attraction discovery results available (to be displayed)")
+                    ics_file_path = None
+                    if model_choice=="Single Agent":
+                        if function_result:
+                            st.info(f"📊 {len(function_result)} function(s) executed")
+                            if isinstance(function_result, dict) and "response" in function_result:
+                                st.markdown("**Function Responses:**")
+                                st.info(f"ℹ️ No functions were executed: {function_result.get('response')}")
                             else:
-                                st.info("ℹ️ No functions were executed")
+                                if function_result and function_result[0].get("function_name")=="create_event":
+                                    ics_file_path = function_result[0].get("data", {}).get("ics_file_path")
+                                # Showcase detailed function results
+                                st.subheader("Function Result Details")
+                                for idx_f, fr in enumerate(function_result):
+                                    fn = fr.get("function_name", f"function_{idx_f+1}")
+                                    st.markdown(f"**{idx_f+1}. {fn}**")
+
+                                    if fn=="spotify_link_discovery":
+                                        songs = fr.get("songs", [])
+                                        if songs:
+                                            for s_idx, song in enumerate(songs):
+                                                st.markdown(f"**Song {s_idx+1}: {song.get('name', 'N/A')}**")
+                                                st.info(f"👤 Artist: {song.get('artist', 'N/A')}")
+                                                st.info(f"🗓️ Release Date: {song.get('release_date', 'N/A')}")
+                                                st.info(f"💽 Album: {song.get('album', 'N/A')}")
+                                                st.info(f"🔗 Spotify Link: {song.get('spotify_url', 'N/A')}")
+                                        else:
+                                            st.markdown(f"**Track: {fr.get('name', 'N/A')}**")
+                                            st.info(f"👤 Artist: {fr.get('artist', 'N/A')}")
+                                            st.info(f"🗓️ Release Date: {fr.get('release_date', 'N/A')}")
+                                            st.info(f"💽 Album: {fr.get('album', 'N/A')}")
+                                            st.info(f"🔗 Spotify Link: {fr.get('spotify_url', 'N/A')}")
+                                    elif fn=="attraction_discovery":
+                                        attractions = fr.get("attractions", [])
+                                        if attractions:
+                                            for a_idx, attraction in enumerate(attractions):
+                                                st.markdown(f"**Attraction {a_idx+1}: {attraction.get('name', 'N/A')}**")
+                                                st.info(f"📝 Description: {attraction.get('description', 'N/A')}")
+                                                st.info(f"🌐 Maps Link: {attraction.get('map_link', 'N/A')}")
+                                                st.info(f"🤩 Fun Fact: {attraction.get('fun_fact', 'N/A')}")
+                        else:
+                            st.info("ℹ️ No functions were executed")
                     else:
-                        st.info("ℹ️ No functions were executed")
+                        ics_file_path = api_response.get("data", {}).get("ics_file_path")
+                    # Handle ICS file download if event created
+                    if ics_file_path:
+                        st.success(f"📄 ICS file created: {ics_file_path}")
+                        try:
+                            with open(ics_file_path, "rb") as f:
+                                ics_data = f.read()
+                            st.download_button(
+                                label="📥 Download ICS Calendar File",
+                                data=ics_data,
+                                file_name=ics_file_path,
+                                mime="text/calendar",
+                                type="primary"
+                            )
+                        except Exception as e:
+                            st.error(f"Failed to download ICS file: {str(e)}")
+                    else:
+                        st.info("ℹ️ Calendar ICS file path not found in response")
                 else:
                     st.warning(f"⚠️ Email processing failed: {api_response.get('message', 'Unknown error')}")
             else:
@@ -315,7 +274,7 @@ with colA:
 
 with colB:
     st.subheader("Email Content")
-    if(idx>4):
+    if(idx>len(data)-1):
         subject = st.session_state.get("subject_area", "")
         body = st.session_state.get("body_area", "")
     else:
