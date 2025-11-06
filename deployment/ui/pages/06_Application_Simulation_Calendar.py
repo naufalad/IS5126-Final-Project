@@ -11,7 +11,7 @@ import altair as alt
 import requests
 # from dotenv import load_dotenv
 
-st.markdown("J")
+
 st.set_page_config(page_title="Calendar", page_icon="🗓️", layout="wide")
 st.title("Calendar")
 st.caption("Visualize events on a calendar")
@@ -683,6 +683,7 @@ with st.form("new_event_form", clear_on_submit=True):
 
 # # Timeline view (full width, below calendar)
 # render_timeline(events, st.session_state.calendar_date.year, st.session_state.calendar_date.month)
+
 
 
 
