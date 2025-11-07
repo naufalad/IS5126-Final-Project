@@ -6,10 +6,10 @@ import streamlit as st
 from datetime import datetime as _dt, timedelta
 import calendar as cal
 import altair as alt
-import plotly.express as px
+# import plotly.express as px
 import plotly.graph_objects as go
 import requests
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
 
 st.set_page_config(page_title="Calendar", page_icon="🗓️", layout="wide")
