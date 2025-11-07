@@ -133,8 +133,8 @@ if not data:
 
 colA, colB = st.columns([1, 3])
 with colA:
-    idx_display = st.number_input("Email No.", min_value=0, max_value=len(data), value=0, step=1)
-    idx = idx_display
+    idx_display = st.number_input("Email No.", min_value=1, max_value=len(data), value=1, step=1)
+    idx = idx_display-1 # Convert to 0-based index
     model_choice = st.radio("Choose classification model:", ['BERT', 'XGBoost', 'RF'], horizontal=True)
     model_choice = ['BERT', 'XGBoost', 'RF'].index(model_choice) + 1
     if st.button("Predict Email Category", type="primary"):
