@@ -81,6 +81,9 @@ st.markdown("""
 
 # HEADER  ICON SVG (Spotify Green)
 st.title("Data Browser")
+
+
+#  LOAD LOCAL DATA 
 def load_local_data():
     try:
         current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -91,18 +94,6 @@ def load_local_data():
     except Exception as e:
         st.error(f" Failed to load local data: {e}")
         return []
-
-#  LOAD LOCAL DATA 
-# def load_local_data():
-#     try:
-#         current_dir = os.path.dirname(os.path.abspath(__file__))
-#         ui_dir = os.path.dirname(current_dir)
-#         data_path = os.path.join(os.path.dirname(ui_dir), "data", "email_features.json")
-#         with open(data_path, "r", encoding="utf-8") as f:
-#             return json.load(f)
-#     except Exception as e:
-#         st.error(f" Failed to load local data: {e}")
-#         return []
 
 # --- SIDEBAR FILTER ---
 st.sidebar.write("### 🔍 Filter")
