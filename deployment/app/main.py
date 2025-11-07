@@ -15,8 +15,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _APP_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _APP_DIR)
 
-from email_manager.calendar_code import process_email_to_calendar
-
 # Import prompts from root deployment folder
 from prompts import (
     EMAIL_EXTRACTION_SYSTEM_PROMPT,
@@ -286,7 +284,7 @@ async def create(req: EmailRequest):
         # Process calendar event (multi-agent)
         print(f"⏱️ Step 2: Processing calendar event (Multi-Agent)...")
         calendar_start = time.time()
-        calendar_response = process_email_to_calendar(features)
+        calendar_response = calendar.process_email_to_calendar(features)
         if calendar_response.get("processed"):
             calendar_function = calendar.CalendarFunction(features, calendar_response.get("calendar_event", {}))
             event = calendar_function.save_calendar()
