@@ -1,0 +1,71 @@
+# Core Framework
+streamlit>=1.28.0
+fastapi>=0.115.0
+uvicorn[standard]>=0.24.0
+
+# Data Processing
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Visualization
+plotly>=5.17.0
+
+# Date/Time Handling
+python-dateutil>=2.9.0
+pytz>=2024.1
+dateparser>=1.1.8
+
+# HTTP Requests
+requests>=2.31.0
+httpx>=0.25.0
+
+# API Documentation & Validation
+pydantic>=2.10.0
+pydantic-core>=2.27.0
+pydantic-settings>=2.6.0
+
+# Environment Variables
+python-dotenv>=1.0.0
+
+# OpenAI Integration
+
+openai>=1.0.0
+
+# Email Processing
+email-validator>=2.0.0
+
+# Data Validation
+jsonschema>=4.19.0
+
+# File Handling
+python-multipart>=0.0.6
+
+# Utilities
+python-json-logger>=2.0.7
+
+# CORS Support
+starlette>=0.27.0
+
+# Streamlit Components
+streamlit-calendar>=0.6.0
+streamlit-extras>=0.3.0
+
+# Calendar & Music Integration
+spotipy
+icalendar>=6.0.0
+
+# AI Agents & Tools
+crewai>=0.80.0
+crewai-tools>=0.12.0
+langchain-openai>=0.2.0
+
+# ML & NLP
+scikit-learn>=1.3.0
+sentence-transformers>=2.2.0
+torch>=2.0.0
+transformers>=4.30.0
+xgboost>=2.0.0
+
+# Job Serialization
+joblib>=1.3.0
+cloudpickle>=3.0.0
