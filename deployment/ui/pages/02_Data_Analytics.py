@@ -82,7 +82,7 @@ df = pd.DataFrame(data)
 st.subheader("Basic Statistics")
 col1, col2, col3, col4 = st.columns(4)
 col1.metric(" Total Emails", len(df))
-col2.metric(" Category", df["categories"].nunique(dropna=True))
+col2.metric(" Category", df["category"].nunique(dropna=True))
 col3.metric(" Urgency Levels", df["urgency_level"].nunique(dropna=True))
 col4.metric(" Action Types", df["action_required"].nunique(dropna=True))
 
@@ -93,8 +93,8 @@ st.subheader("Data Distribution")
 colA, colB = st.columns(2)
 
 with colA:
-    if "categories" in df.columns:
-        s = df["categories"].fillna("(none)").value_counts().reset_index()
+    if "category" in df.columns:
+        s = df["category"].fillna("(none)").value_counts().reset_index()
         s.columns = ["Category", "Count"]
         chart = alt.Chart(s).mark_bar().encode(
             x="Count:Q",

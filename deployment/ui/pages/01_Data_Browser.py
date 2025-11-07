@@ -125,15 +125,15 @@ if search_term:
     ]
 
 #  Event type dropdown filter (sorted ascending)
-categories = list({
-    (i.get("categories") if i.get("categories") is not None else "unknown")
+category = list({
+    (i.get("category") if i.get("category") is not None else "unknown")
     for i in local_data
 })
-categories = sorted(categories)  # sort A-Z
+category = sorted(category)  # sort A-Z
 
 event_filter = st.sidebar.selectbox(
-    "Categories",
-    ["All"] + categories,
+    "category",
+    ["All"] + category,
     index=0,
     key="event_filter"
 )
@@ -141,7 +141,7 @@ event_filter = st.sidebar.selectbox(
 if event_filter != "All":
     filtered = [
         i for i in filtered
-        if (i.get("categories") if i.get("categories") is not None else "unknown") == event_filter
+        if (i.get("category") if i.get("category") is not None else "unknown") == event_filter
     ]
 
 # ⚡ Urgency level dropdown filter
@@ -221,7 +221,7 @@ if page_data:
         column_config={
             "subject": st.column_config.TextColumn("Subject ", help="Email subject line"),
             "sender": st.column_config.TextColumn("From ", help="Email sender"),
-            "categories": st.column_config.TextColumn("categories ", help="Predicted categories of the email"),
+            "category": st.column_config.TextColumn("category ", help="Predicted category of the email"),
             "email_text": st.column_config.TextColumn("Email Preview ", help="First 120 chars of email body"),
         },
         hide_index=False,
