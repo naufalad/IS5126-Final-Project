@@ -4,7 +4,7 @@ import pandas as pd
 import streamlit as st
 import re
 import requests
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
 
 st.set_page_config(page_title="Email Prediction and Extraction", page_icon="📥", layout="wide")
@@ -35,7 +35,7 @@ hr { border: 1px solid #333; }
 """, unsafe_allow_html=True)
 
 # Backend API configuration
-load_dotenv()  # Load .env file if it exists
+# load_dotenv()  # Load .env file if it exists
 
 BACKEND_URL = os.getenv("BACKEND_API", "http://127.0.0.1:8000")
 
