@@ -1,6 +1,16 @@
 # IS5126 Final Project
 ## Email Classifier
 
+### Reports
+
+### Dataset
+
+### Notebooks
+
+### Running Application
+We have deployed our application under https://email-manager.streamlit.app/, or can also run in the local
+You can find and follow the guide in /application/README.md
+
 ### Author
 Group 4
 
