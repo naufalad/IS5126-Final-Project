@@ -78,7 +78,7 @@ body, .stApp {
 
 
 # Backend API configuration
-load_dotenv()  # Load .env file if it exists
+# load_dotenv()  # Load .env file if it exists
 
 BACKEND_URL = os.getenv("BACKEND_API", "http://127.0.0.1:8000")
 
