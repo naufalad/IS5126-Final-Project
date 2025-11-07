@@ -132,7 +132,7 @@ categories = list({
 categories = sorted(categories)  # sort A-Z
 
 event_filter = st.sidebar.selectbox(
-    "Category: Event Type",
+    "Categories",
     ["All"] + categories,
     index=0,
     key="event_filter"
@@ -243,3 +243,4 @@ if page_data:
                 st.json({k: v for k, v in item.items() if k != "email_text"})
 else:
     st.info("No matching records found.")
+
