@@ -4,7 +4,7 @@ import pandas as pd
 import streamlit as st
 import re
 import requests
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
 
 st.set_page_config(page_title="Email Prediction and Extraction", page_icon="📥", layout="wide")
@@ -285,4 +285,5 @@ if 'email_features' in st.session_state:
     st.json(st.session_state['email_features'])
 else:
     st.info("No features extracted yet. Click 'Extract and Manage Email Features' to process an email.")
+
 
