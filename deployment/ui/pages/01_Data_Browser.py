@@ -82,14 +82,12 @@ st.markdown("""
 # HEADER  ICON SVG (Spotify Green)
 st.title("Data Browser")
 
-
 #  LOAD LOCAL DATA 
 def load_local_data():
     try:
         current_dir = os.path.dirname(os.path.abspath(__file__))
         ui_dir = os.path.dirname(current_dir)
         data_path = os.path.join(os.path.dirname(ui_dir), "data", "email_features.json")
-      
         with open(data_path, "r", encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
@@ -127,15 +125,15 @@ if search_term:
     ]
 
 #  Event type dropdown filter (sorted ascending)
-event_types = list({
-    (i.get("event_type") if i.get("event_type") is not None else "unknown")
+categories = list({
+    (i.get("categories") if i.get("categories") is not None else "unknown")
     for i in local_data
 })
-event_types = sorted(event_types)  # sort A-Z
+categories = sorted(categories)  # sort A-Z
 
 event_filter = st.sidebar.selectbox(
     "Category: Event Type",
-    ["All"] + event_types,
+    ["All"] + categories,
     index=0,
     key="event_filter"
 )
@@ -143,7 +141,7 @@ event_filter = st.sidebar.selectbox(
 if event_filter != "All":
     filtered = [
         i for i in filtered
-        if (i.get("event_type") if i.get("event_type") is not None else "unknown") == event_filter
+        if (i.get("categories") if i.get("categories") is not None else "unknown") == event_filter
     ]
 
 # ⚡ Urgency level dropdown filter
@@ -223,7 +221,7 @@ if page_data:
         column_config={
             "subject": st.column_config.TextColumn("Subject ", help="Email subject line"),
             "sender": st.column_config.TextColumn("From ", help="Email sender"),
-            "event_type": st.column_config.TextColumn("Event Type ", help="Predicted event type"),
+            "categories": st.column_config.TextColumn("categories ", help="Predicted categories of the email"),
             "email_text": st.column_config.TextColumn("Email Preview ", help="First 120 chars of email body"),
         },
         hide_index=False,
@@ -245,11 +243,3 @@ if page_data:
                 st.json({k: v for k, v in item.items() if k != "email_text"})
 else:
     st.info("No matching records found.")
-
-
-
-
-
-
-
-
