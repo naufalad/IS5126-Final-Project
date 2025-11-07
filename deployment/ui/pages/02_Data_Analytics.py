@@ -100,7 +100,7 @@ with colA:
             x="Count:Q",
             y=alt.Y("Category:N", sort="-x"),
             color=alt.Color("Category:N")  # warna asli kategori
-        ).properties(title="Event Type Distribution", height=320)
+        ).properties(title="Category Distribution", height=320)
         st.altair_chart(chart, use_container_width=True)
 
 with colB:
