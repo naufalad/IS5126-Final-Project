@@ -32,7 +32,7 @@ jsonschema>=4.19.0
 python-multipart>=0.0.6
 
 # Calendar & Music Integration
-spotipy>=2.27.0
+spotipy>=2.25.1
 icalendar>=6.0.0
 
 # AI Agents & Tools

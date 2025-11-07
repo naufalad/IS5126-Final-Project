@@ -8,7 +8,6 @@ import re
 
 st.set_page_config(page_title="Notifications", page_icon="🔔", layout="wide")
 st.title("Notifications")
-st.caption("Apple-style stacked notifications; generated when you Receive Email of type 'notification'")
 
 
 # Paths
