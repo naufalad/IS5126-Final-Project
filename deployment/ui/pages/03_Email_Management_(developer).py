@@ -62,7 +62,7 @@ def call_function_call_api(email_data: dict) -> dict:
         response = requests.post(
             f"{BACKEND_URL}/function_call",
             json=email_data,
-            timeout=30  # Longer timeout for LLM processing
+            timeout=50  # Longer timeout for LLM processing
         )
         response.raise_for_status()
         return response.json()
@@ -85,7 +85,7 @@ def call_multi_agent_api(email_data: dict) -> dict:
         response = requests.post(
             f"{BACKEND_URL}/create",
             json=email_data,
-            timeout=30  # Longer timeout for LLM processing
+            timeout=50  # Longer timeout for LLM processing
         )
         response.raise_for_status()
         return response.json()
@@ -108,7 +108,7 @@ def call_predict_api(email_data: dict) -> dict:
         response = requests.post(
             f"{BACKEND_URL}/predict",
             json=email_data,
-            timeout=30  # Longer timeout for LLM processing
+            timeout=50  # Longer timeout for LLM processing
         )
         response.raise_for_status()
         return response.json()
