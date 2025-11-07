@@ -7,7 +7,7 @@ from datetime import datetime as _dt, timedelta
 import calendar as cal
 import altair as alt
 # import plotly.express as px
-import plotly.graph_objects as go
+# import plotly.graph_objects as go
 import requests
 # from dotenv import load_dotenv
 
